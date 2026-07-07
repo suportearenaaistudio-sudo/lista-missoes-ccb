@@ -104,6 +104,9 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
       } else {
         await onSave({ ...form, section, month: eventMonth, year: eventYear });
       }
+      onClose();
+    } catch (err) {
+      // O erro será capturado e exibido pelo pai
     } finally {
       setSaving(false);
     }
