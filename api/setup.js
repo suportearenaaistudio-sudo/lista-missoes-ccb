@@ -20,11 +20,15 @@ export default async function handler(req, res) {
         local      VARCHAR(100) NOT NULL,
         event_type VARCHAR(50) NOT NULL,
         is_parcial BOOLEAN DEFAULT FALSE,
+        show_in_prev_month BOOLEAN DEFAULT FALSE,
         section    VARCHAR(50) NOT NULL,
         observation TEXT DEFAULT '',
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `;
+
+    // Ensure column exists for already existing tables
+    await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS show_in_prev_month BOOLEAN DEFAULT FALSE`;
 
     // Create index
     await sql`CREATE INDEX IF NOT EXISTS idx_events_year_month ON events(year, month)`;

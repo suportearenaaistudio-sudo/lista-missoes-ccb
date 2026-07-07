@@ -22,9 +22,17 @@ export default async function handler(req, res) {
       
       let rows;
       if (month) {
+        // Retorna eventos do proprio mes E eventos do mes seguinte marcados com show_in_prev_month = true
         rows = await sql`
           SELECT * FROM events 
-          WHERE month = ${parseInt(month)} AND year = ${parseInt(year)}
+          WHERE (month = ${parseInt(month)} AND year = ${parseInt(year)})
+             OR (
+               show_in_prev_month = TRUE 
+               AND (
+                 (month = ${parseInt(month)} + 1 AND year = ${parseInt(year)})
+                 OR (month = 1 AND ${parseInt(month)} = 12 AND year = ${parseInt(year)} + 1)
+               )
+             )
           ORDER BY event_date ASC, id ASC
         `;
       } else {
@@ -38,17 +46,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { event_date, time, local, event_type, is_parcial, observation, section, year, month } = req.body;
+      const { event_date, time, local, event_type, is_parcial, show_in_prev_month, observation, section, year, month } = req.body;
       const rows = await sql`
-        INSERT INTO events (event_date, time, local, event_type, is_parcial, observation, section, year, month)
-        VALUES (${event_date}, ${time}, ${local}, ${event_type}, ${is_parcial ?? false}, ${observation ?? ''}, ${section}, ${parseInt(year)}, ${parseInt(month)})
+        INSERT INTO events (event_date, time, local, event_type, is_parcial, show_in_prev_month, observation, section, year, month)
+        VALUES (${event_date}, ${time}, ${local}, ${event_type}, ${is_parcial ?? false}, ${show_in_prev_month ?? false}, ${observation ?? ''}, ${section}, ${parseInt(year)}, ${parseInt(month)})
         RETURNING *
       `;
       return res.status(201).json(rows[0]);
     }
 
     if (req.method === 'PUT') {
-      const { id, event_date, time, local, event_type, is_parcial, observation, section } = req.body;
+      const { id, event_date, time, local, event_type, is_parcial, show_in_prev_month, observation, section } = req.body;
       const [y, m, d] = event_date.split('-');
       const monthVal = parseInt(m);
       const yearVal = parseInt(y);
@@ -56,6 +64,7 @@ export default async function handler(req, res) {
         UPDATE events 
         SET event_date = ${event_date}, time = ${time}, local = ${local}, 
             event_type = ${event_type}, is_parcial = ${is_parcial ?? false}, 
+            show_in_prev_month = ${show_in_prev_month ?? false},
             observation = ${observation ?? ''}, section = ${section},
             month = ${monthVal}, year = ${yearVal}
         WHERE id = ${id}

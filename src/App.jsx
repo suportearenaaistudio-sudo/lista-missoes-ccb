@@ -72,6 +72,7 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
     local: event?.local || LOCAIS[2],
     event_type: event?.event_type || 'Ensaio',
     is_parcial: event?.is_parcial ?? false,
+    show_in_prev_month: event?.show_in_prev_month ?? false,
     observation: (event?.observation && event.observation !== '__seeded__') ? event.observation : '',
   });
 
@@ -111,6 +112,17 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
       setSaving(false);
     }
   };
+
+  const dateParts = form.event_date ? form.event_date.split('-') : [];
+  const eventDay = dateParts[2] ? parseInt(dateParts[2]) : 0;
+  const eventMonth = dateParts[1] ? parseInt(dateParts[1]) : 0;
+  const isEarlyInMonth = eventDay > 0 && eventDay <= 7;
+  
+  let prevMonthName = '';
+  if (eventMonth > 0) {
+    const idx = eventMonth === 1 ? 11 : eventMonth - 2;
+    prevMonthName = MONTHS[idx];
+  }
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -165,6 +177,18 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
                   onClick={() => set('is_parcial', true)}>Sim</button>
                 <button type="button" className={`toggle-btn ${!form.is_parcial ? 'active' : ''}`}
                   onClick={() => set('is_parcial', false)}>Não</button>
+              </div>
+            </div>
+          )}
+
+          {isEarlyInMonth && (
+            <div className="form-group">
+              <label className="form-label">Sair na lista de {prevMonthName}?</label>
+              <div className="toggle-group">
+                <button type="button" className={`toggle-btn ${form.show_in_prev_month ? 'active' : ''}`}
+                  onClick={() => set('show_in_prev_month', true)}>Sim</button>
+                <button type="button" className={`toggle-btn ${!form.show_in_prev_month ? 'active' : ''}`}
+                  onClick={() => set('show_in_prev_month', false)}>Não</button>
               </div>
             </div>
           )}
