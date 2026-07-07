@@ -255,6 +255,7 @@ function PrintPreview({ events, month, year, onClose }) {
         );
       })}
 
+      <div className="print-footer" style={{ textTransform: 'none', marginBottom: '4px' }}>Culto de Jovens todos os domingos às 10:00 em Iporã</div>
       <div className="print-footer">Coletas todos os dias de culto</div>
     </div>
   );

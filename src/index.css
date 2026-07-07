@@ -762,6 +762,11 @@ body.dark .btn-danger {
   color: var(--accent-green); 
   border-color: rgba(16, 185, 129, 0.2); 
 }
+.badge-jovens { 
+  background: var(--accent-green-light); 
+  color: var(--accent-green); 
+  border-color: rgba(16, 185, 129, 0.2); 
+}
 .badge-regional { 
   background: var(--accent-purple-light); 
   color: var(--accent-purple); 
@@ -917,6 +922,7 @@ body.dark .btn-danger {
 .calendar-event-tag.tag-regional { border-left-color: var(--accent-purple); background: var(--accent-purple-light); }
 .calendar-event-tag.tag-culto { border-left-color: var(--accent-blue); background: var(--accent-blue-light); }
 .calendar-event-tag.tag-mocidade { border-left-color: var(--accent-green); background: var(--accent-green-light); }
+.calendar-event-tag.tag-jovens { border-left-color: var(--accent-green); background: var(--accent-green-light); }
 
 /* ===== WARNING BANNER AND ITEMS ===== */
 .validation-warning-banner {
