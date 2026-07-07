@@ -510,9 +510,11 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
 
   return (
     <div>
-      <button className="back-btn" onClick={onBack}>
-        <ChevronLeft /> Visão Geral
-      </button>
+      {isAdmin && (
+        <button className="back-btn" onClick={onBack}>
+          <ChevronLeft /> Visão Geral
+        </button>
+      )}
 
       <div className="month-actions">
         <div>
@@ -525,9 +527,11 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
               {copying ? 'Copiando...' : `Copiar de ${MONTHS[month - 2]}`}
             </button>
           )}
-          <button className="btn btn-outline" onClick={() => setShowPrint(true)}>
-            <Printer /> Visualizar Impressão
-          </button>
+          {isAdmin && (
+            <button className="btn btn-outline" onClick={() => setShowPrint(true)}>
+              <Printer /> Visualizar Impressão
+            </button>
+          )}
           {isAdmin && (
             <button className="btn btn-primary" onClick={() => setModal({ mode: 'add', event: null })}>
               <Plus /> Novo Evento
@@ -997,6 +1001,7 @@ export default function App() {
     const cached = localStorage.getItem('admin_user');
     return cached ? JSON.parse(cached) : null;
   });
+  const [emailInput, setEmailInput] = useState('');
 
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
@@ -1152,20 +1157,17 @@ export default function App() {
     }
   };
 
-  const handleGoogleLogin = (response) => {
-    const token = response.credential;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (payload.email === 'vitorpradotamos@gmail.com') {
-        localStorage.setItem('admin_token', token);
-        localStorage.setItem('admin_user', JSON.stringify(payload));
-        setAdminUser(payload);
-        setToast('Login efetuado com sucesso!');
-      } else {
-        setToast('Acesso negado: E-mail ' + payload.email + ' não autorizado.');
-      }
-    } catch (err) {
-      setToast('Erro ao processar login: ' + err.message);
+  const handleEmailLogin = (e) => {
+    e.preventDefault();
+    if (emailInput.trim().toLowerCase() === 'vitorpradotamos@gmail.com') {
+      const authorizedUser = { email: 'vitorpradotamos@gmail.com', name: 'Vitor Prado', picture: '' };
+      localStorage.setItem('admin_token', 'vitor-authorized-token');
+      localStorage.setItem('admin_user', JSON.stringify(authorizedUser));
+      setAdminUser(authorizedUser);
+      setToast('Login efetuado com sucesso!');
+      setEmailInput('');
+    } else {
+      setToast('Acesso negado: E-mail não autorizado.');
     }
   };
 
@@ -1193,13 +1195,28 @@ export default function App() {
           <h1 className="admin-login-title">Área Administrativa</h1>
           <p className="admin-login-subtitle">Apenas para administradores autorizados (vitorpradotamos@gmail.com)</p>
           
-          <div id="google-login-btn" style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}></div>
-          
-          {import.meta.env.DEV && (
-            <button className="btn btn-outline" onClick={handleMockLogin} style={{ marginTop: '20px', width: '100%', justifyContent: 'center' }}>
-              Entrar como Desenvolvedor (Bypass)
+          <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+            <input 
+              type="email" 
+              placeholder="Digite seu e-mail cadastrado" 
+              required
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.9)',
+                color: '#333',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', borderRadius: '8px' }}>
+              Entrar
             </button>
-          )}
+          </form>
 
           <button className="btn btn-ghost" onClick={() => navigateTo('/')} style={{ marginTop: '16px', fontSize: '12px' }}>
             ← Voltar para a lista pública
@@ -1261,11 +1278,7 @@ export default function App() {
                   <div className="user-avatar">ADM</div>
                 )}
               </div>
-            ) : (
-              <button className="btn btn-outline btn-sm" onClick={() => navigateTo('/adm')}>
-                Área Administrativa
-              </button>
-            )}
+            ) : null}
           </div>
         </header>
   
@@ -1291,11 +1304,6 @@ export default function App() {
             </div>
             
             <div style={{ display: 'flex', gap: '6px' }}>
-              {!isAdminMode && (
-                <button className="btn btn-ghost btn-sm" onClick={() => navigateTo('/adm')} style={{ fontSize: '11px' }}>
-                  Admin
-                </button>
-              )}
               {isAdminMode && selectedMonth !== null && (
                 <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
                   Painel
