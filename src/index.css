@@ -1253,30 +1253,50 @@ body.dark .validation-warning-banner {
     flex-direction: column;
   }
   
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    transform: translateX(-100%);
-    width: 280px;
-    height: 100vh;
-  }
-  
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  
-  .sidebar-overlay.open {
-    display: block;
-  }
-  
   .mobile-header {
     display: flex;
   }
   
   .main-body {
-    padding: 20px 16px;
+    padding: 16px 12px;
+  }
+  
+  /* Ajusta os botoes de acao de mes no mobile */
+  .month-actions {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+  
+  .month-actions .btn-group {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .month-actions .btn-group button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Faz a area do calendario rolar de forma linda e mantem as 7 colunas originais */
+  .calendar-capture-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px !important;
+  }
+  
+  .calendar-capture-container > div,
+  .calendar-grid {
+    min-width: 750px !important; /* Espaço otimizado para caber as 7 colunas legíveis */
+  }
+
+  .calendar-capture-header {
+    min-width: 750px !important;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
   }
 }
 
@@ -1286,27 +1306,28 @@ body.dark .validation-warning-banner {
   .form-row { grid-template-columns: 1fr; }
   
   .event-row {
-    flex-wrap: wrap;
-    gap: 8px;
+    position: relative !important;
+    padding-right: 80px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
   }
   
   .event-actions {
-    position: absolute;
-    right: 12px;
-    top: 12px;
-    opacity: 1;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    opacity: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
   }
   
   .event-badge {
     margin-top: 4px;
-  }
-  
-  .calendar-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .calendar-weekday-header:nth-child(n+4) {
-    display: none;
   }
 }
 

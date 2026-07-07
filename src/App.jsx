@@ -618,9 +618,14 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule }) {
           <h1 className="page-title">Painel Geral {CURRENT_YEAR}</h1>
           <p className="page-subtitle">Congregação Cristã no Brasil — Região de Iporã-PR</p>
         </div>
-        <button className="btn btn-outline" onClick={onResetSchedule} style={{ fontSize: '13px' }}>
-          Restaurar Padrão Regional
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-outline" onClick={onResetSchedule} style={{ fontSize: '13px' }}>
+            Restaurar Padrão Regional
+          </button>
+          <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus /> Novo Evento
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-stats">
@@ -1008,6 +1013,7 @@ export default function App() {
               events={events} 
               onSelectMonth={setSelectedMonth} 
               onResetSchedule={handleResetSchedule}
+              onCreateEvent={() => setModal({ mode: 'add', event: { month: new Date().getMonth() + 1, year: CURRENT_YEAR, event_date: new Date().toISOString().split('T')[0] } })}
             />
           ) : (
             <MonthEditor 
