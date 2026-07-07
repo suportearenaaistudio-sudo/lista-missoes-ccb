@@ -66,8 +66,12 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
   const isEdit = !!event?.id;
   const defaultDate = `${year}-${String(month || 1).padStart(2,'0')}-01`;
 
+  const cleanEventDate = event?.event_date 
+    ? (event.event_date.includes('T') ? event.event_date.split('T')[0] : event.event_date) 
+    : defaultDate;
+
   const [form, setForm] = useState({
-    event_date: event?.event_date || defaultDate,
+    event_date: cleanEventDate,
     time: event?.time || '19:30',
     local: event?.local || LOCAIS[2],
     event_type: event?.event_type || 'Ensaio',
@@ -1014,7 +1018,12 @@ export default function App() {
             <MonthEditor 
               month={selectedMonth} 
               year={CURRENT_YEAR} 
-              events={events.filter(e => e.month === selectedMonth)}
+              events={events.filter(e => {
+                if (e.month === selectedMonth) return true;
+                const isNextMonth = e.month === selectedMonth + 1 || (selectedMonth === 12 && e.month === 1);
+                if (isNextMonth && e.show_in_prev_month) return true;
+                return false;
+              })}
               allEvents={events}
               onSave={handleSave}
               onDelete={handleDelete}
