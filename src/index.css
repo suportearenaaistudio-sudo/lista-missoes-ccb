@@ -1253,8 +1253,12 @@ body.dark .validation-warning-banner {
     flex-direction: column;
   }
   
+  .workspace-header {
+    display: none !important;
+  }
+  
   .mobile-header {
-    display: flex;
+    display: flex !important;
   }
   
   .main-body {
@@ -1282,21 +1286,37 @@ body.dark .validation-warning-banner {
 
   /* Faz a area do calendario rolar de forma linda e mantem as 7 colunas originais */
   .calendar-capture-container {
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: auto !important;
+    display: block !important;
     -webkit-overflow-scrolling: touch;
     padding: 12px !important;
+    background: var(--surface) !important;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
   }
   
   .calendar-capture-container > div,
   .calendar-grid {
-    min-width: 750px !important; /* Espaço otimizado para caber as 7 colunas legíveis */
+    min-width: 800px !important; /* Espaço otimizado para caber as 7 colunas legíveis */
   }
 
   .calendar-capture-header {
-    min-width: 750px !important;
+    min-width: 800px !important;
     flex-direction: column;
     align-items: flex-start !important;
     gap: 12px;
+  }
+  
+  .calendar-capture-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  
+  .legend-item {
+    white-space: nowrap !important;
   }
 }
 
