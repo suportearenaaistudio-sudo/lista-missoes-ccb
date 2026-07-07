@@ -1306,26 +1306,39 @@ body.dark .validation-warning-banner {
 
 /* ===== SCREEN PRINT ===== */
 @media print {
-  @page {
-    size: landscape;
-    margin: 0;
-  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: white !important; color: black !important; margin: 0; }
   body.dark { background: white !important; color: black !important; }
   
-  /* Oculta tudo na tela por padrão */
-  body * {
-    visibility: hidden !important;
+  /* Oculta componentes da interface do sistema na impressão, eliminando-os do fluxo */
+  .sidebar,
+  .header,
+  .month-actions,
+  .back-btn,
+  .view-tabs,
+  .section-block,
+  .empty-state,
+  .upcoming-events-section,
+  .months-grid,
+  .search-results-header,
+  .print-preview-bar {
+    display: none !important;
   }
   
-  /* Torna visível apenas o elemento print-page e seus descendentes */
-  .print-page,
-  .print-page * {
-    visibility: visible !important;
+  /* Remove margens e fundos escuros do overlay no papel */
+  .print-preview-overlay {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
   }
   
-  /* Força a print-page a ocupar a tela inteira de impressão */
+  /* Ajusta o contêiner da página impressa */
   .print-page {
     position: absolute !important;
     left: 0 !important;
