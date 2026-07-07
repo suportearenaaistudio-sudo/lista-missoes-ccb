@@ -939,6 +939,13 @@ export default function App() {
       <div className="main-workspace">
         <header className="workspace-header">
           <div className="header-left">
+            <div className="app-brand no-print">
+              <img src="/logo.png" alt="CCB" className="app-brand-logo" />
+              <div className="app-brand-text">
+                <span className="app-brand-title">Lista de Missões</span>
+                <span className="app-brand-subtitle">CCB Iporã-PR</span>
+              </div>
+            </div>
             <div className="header-search-wrapper no-print">
               <span className="header-search-icon">
                 <SearchIcon size={14} />
@@ -973,22 +980,23 @@ export default function App() {
  
         <header className="mobile-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button 
-                className="btn btn-ghost btn-sm btn-icon" 
-                onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-                style={{ padding: '4px' }}
-              >
-                {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontWeight: 600, fontSize: '13px' }}>
-                  {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Visão Geral'}
+                  {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Lista de Missões'}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   CCB Iporã-PR
                 </div>
               </div>
+              <button 
+                className="btn btn-ghost btn-sm btn-icon" 
+                onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+                style={{ padding: '4px', marginLeft: '4px' }}
+              >
+                {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
+              </button>
             </div>
             {selectedMonth !== null && (
               <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>

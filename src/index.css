@@ -118,15 +118,49 @@ body {
 .sidebar-logo {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--accent-lime) 0%, var(--accent-lime-hover) 100%);
   border-radius: var(--radius-sm);
+  object-fit: contain;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.app-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: -0.5px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.app-brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-brand-logo--mobile {
+  width: 32px;
+  height: 32px;
+}
+
+.app-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.app-brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.app-brand-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 .sidebar-brand-title {
@@ -1259,6 +1293,10 @@ body.dark .validation-warning-banner {
   
   .mobile-header {
     display: flex !important;
+  }
+
+  .app-brand-text {
+    display: none;
   }
   
   .main-body {
