@@ -583,7 +583,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
 }
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
-function YearDashboard({ events, onSelectMonth, onResetSchedule }) {
+function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent }) {
   let countEnsaios = 0;
   let countCultos = 0;
   let countMocidade = 0;
