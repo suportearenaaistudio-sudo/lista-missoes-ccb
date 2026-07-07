@@ -1404,3 +1404,63 @@ body.dark .validation-warning-banner {
 .legend-dot.dot-regional { background: var(--accent-purple); }
 .legend-dot.dot-culto { background: var(--accent-blue); }
 .legend-dot.dot-jovens { background: var(--accent-green); }
+
+/* ===== CALENDAR CAPTURE AREA ===== */
+.calendar-capture-container {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+body.dark .calendar-capture-container {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.calendar-capture-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 16px;
+}
+
+body.dark .calendar-capture-header {
+  border-bottom-color: #334155;
+}
+
+.calendar-capture-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+body.dark .calendar-capture-title {
+  color: #f8fafc;
+}
+
+.calendar-capture-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+body.dark .calendar-capture-subtitle {
+  color: #94a3b8;
+}
+
+.calendar-capture-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+body.dark .calendar-capture-legend {
+  color: #94a3b8;
+}

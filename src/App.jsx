@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
          formatDate, buildEventLabel, getSectionBadge, checkRuleViolations } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
-
+ 
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = 'currentColor', fill = 'none', children }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth="2"
@@ -10,7 +11,7 @@ const Icon = ({ d, size = 16, stroke = 'currentColor', fill = 'none', children }
     {d ? <path d={d} /> : children}
   </svg>
 );
-
+ 
 const HomeIcon = () => <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10" />;
 const CalendarIcon = () => <Icon d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM16 2v4M8 2v4M3 10h18" />;
 const ChevronLeft = () => <Icon d="M15 18l-6-6 6-6" />;
@@ -23,6 +24,7 @@ const MenuIcon = () => <Icon d="M4 6h16M4 12h16M4 18h16" />;
 const SearchIcon = () => <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />;
 const AlertIcon = () => <Icon d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />;
 const SunIcon = () => <Icon d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z" />;
+const DownloadIcon = () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />;
 const MoonIcon = () => <Icon d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />;
 
 // Custom icons for stats
@@ -289,6 +291,26 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
   const [showPrint, setShowPrint] = useState(false);
   const [viewTab, setViewTab] = useState('list');
   const [copying, setCopying] = useState(false);
+  const calendarRef = useRef(null);
+ 
+  const handleDownloadImage = async () => {
+    if (!calendarRef.current) return;
+    try {
+      const canvas = await html2canvas(calendarRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: document.body.className === 'dark' ? '#1e293b' : '#ffffff',
+      });
+      const image = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `calendario_${monthName.toLowerCase()}_2026.png`;
+      link.href = image;
+      link.click();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao gerar imagem.');
+    }
+  };
 
   const monthName = MONTHS[month - 1];
 
@@ -440,18 +462,31 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
         </div>
       )}
 
-      {viewTab === 'calendar' && events.length > 0 && (
-        <div className="calendar-legend">
-          <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
-          <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
-          <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
-          <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
-          <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
-        </div>
-      )}
-
       {viewTab === 'calendar' && events.length > 0 ? (
-        renderCalendarGrid()
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
+            <button className="btn btn-outline" onClick={handleDownloadImage} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DownloadIcon /> Baixar Calendário (Imagem)
+            </button>
+          </div>
+ 
+          <div ref={calendarRef} className="calendar-capture-container">
+            <div className="calendar-capture-header">
+              <div>
+                <h2 className="calendar-capture-title">{monthName} {year}</h2>
+                <div className="calendar-capture-subtitle">CCB Região de Iporã-PR — Agenda Mensal</div>
+              </div>
+              <div className="calendar-capture-legend">
+                <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
+                <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
+                <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
+                <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
+                <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
+              </div>
+            </div>
+            {renderCalendarGrid()}
+          </div>
+        </div>
       ) : (
         SECTION_ORDER.map(section => {
           const sectionEvents = grouped[section];
