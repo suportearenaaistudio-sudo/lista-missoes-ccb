@@ -618,14 +618,9 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule }) {
           <h1 className="page-title">Painel Geral {CURRENT_YEAR}</h1>
           <p className="page-subtitle">Congregação Cristã no Brasil — Região de Iporã-PR</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-outline" onClick={onResetSchedule} style={{ fontSize: '13px' }}>
-            Restaurar Padrão Regional
-          </button>
-          <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Plus /> Novo Evento
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Plus /> Novo Evento
+        </button>
       </div>
 
       <div className="dashboard-stats">
