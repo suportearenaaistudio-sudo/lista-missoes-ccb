@@ -20,19 +20,20 @@ export const LOCAIS = [
 
 export const SECTIONS = {
   'Ensaio': 'ENSAIOS MENSAIS',
-  'Ensaio Regional': 'ENSAIOS MENSAIS',
-  'Culto Unificado': 'CULTO UNIFICADO',
   'Culto de Evangelização': 'CULTO DE EVANGELIZAÇÃO',
-  'Reunião de Mocidade': 'REUNIÃO DE MOCIDADE',
   'Culto de Jovens': 'CULTO DE JOVENS',
+  'Culto Unificado': 'CULTO UNIFICADO',
+  'Reunião de Mocidade': 'REUNIÃO DE MOCIDADE',
+  'Ensaio Regional': 'ENSAIO REGIONAL',
 };
 
 export const SECTION_ORDER = [
   'ENSAIOS MENSAIS',
-  'CULTO UNIFICADO',
   'CULTO DE EVANGELIZAÇÃO',
-  'REUNIÃO DE MOCIDADE',
   'CULTO DE JOVENS',
+  'CULTO UNIFICADO',
+  'REUNIÃO DE MOCIDADE',
+  'ENSAIO REGIONAL',
 ];
 
 export const EVENT_TYPES = Object.keys(SECTIONS);
