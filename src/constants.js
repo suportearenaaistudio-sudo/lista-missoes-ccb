@@ -79,7 +79,7 @@ export function buildEventLabel(ev) {
   label += ` ${ev.time} h`;
 
   if (ev.observation && ev.observation !== '__seeded__') {
-    label += ` — ${ev.observation}`;
+    label += ` - ${ev.observation}`;
   }
 
   return label;

@@ -432,9 +432,9 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
                       <span className="event-date">{formatDate(ev.event_date)}</span>
                       <span className="event-time">{ev.time}</span>
                       <span className="event-desc">
-                        {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` — ${ev.observation}`, '')}
+                        {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` - ${ev.observation}`, '')}
                         {ev.observation && ev.observation !== '__seeded__' && (
-                          <span className="event-obs"> — {ev.observation}</span>
+                          <span className="event-obs"> - {ev.observation}</span>
                         )}
                         {warnings.length > 0 && (
                           <span className="event-row-warning-indicator" title={warnings.join('\n')}>
@@ -608,7 +608,7 @@ function YearDashboard({ events, onSelectMonth }) {
                       <span className="upcoming-event-name">{ev.local}</span>
                       <span className="upcoming-event-meta">
                         {ev.event_type === 'Ensaio' ? (ev.is_parcial ? 'Ensaio Parcial' : 'Ensaio Local') : ev.event_type} às {ev.time} h
-                        {ev.observation && ev.observation !== '__seeded__' && ` — ${ev.observation}`}
+                        {ev.observation && ev.observation !== '__seeded__' && ` - ${ev.observation}`}
                       </span>
                     </div>
                   </div>
@@ -694,9 +694,9 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
                     <span className="event-date">{formatDate(ev.event_date)}</span>
                     <span className="event-time">{ev.time}</span>
                     <span className="event-desc">
-                      {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` — ${ev.observation}`, '')}
+                      {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` - ${ev.observation}`, '')}
                       {ev.observation && ev.observation !== '__seeded__' && (
-                        <span className="event-obs"> — {ev.observation}</span>
+                        <span className="event-obs"> - {ev.observation}</span>
                       )}
                       {warnings.length > 0 && (
                         <span className="event-row-warning-indicator" title={warnings.join('\n')}>
