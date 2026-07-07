@@ -94,9 +94,6 @@ export function checkRuleViolations(event, allEvents) {
 
   // Regra de Rodízio para Ensaios (Nova Santa Helena nos meses ímpares, Vila Nilza nos meses pares)
   if (type === 'Ensaio' || type === 'Ensaio Regional') {
-    if (local === 'Nova Santa Helena' && month % 2 === 0) {
-      violations.push('Nova Santa Helena deve realizar ensaios apenas em meses ímpares.');
-    }
     if (local === 'Vila Nilza' && month % 2 !== 0) {
       violations.push('Vila Nilza deve realizar ensaios apenas em meses pares.');
     }

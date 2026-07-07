@@ -75,7 +75,6 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // Executa as validações regionais e de conflito em tempo real
   const currentEventObject = {
     id: event?.id,
     event_date: form.event_date,
@@ -250,14 +249,13 @@ function PrintPreview({ events, month, year, onClose }) {
 
 // ─── Month Editor ─────────────────────────────────────────────────────────────
 function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack }) {
-  const [modal, setModal] = useState(null); // null | { mode: 'add'|'edit', event }
+  const [modal, setModal] = useState(null);
   const [showPrint, setShowPrint] = useState(false);
-  const [viewTab, setViewTab] = useState('list'); // 'list' | 'calendar'
+  const [viewTab, setViewTab] = useState('list');
   const [copying, setCopying] = useState(false);
 
   const monthName = MONTHS[month - 1];
 
-  // Group events by section
   const grouped = {};
   SECTION_ORDER.forEach(s => { grouped[s] = []; });
   events.forEach(ev => {
@@ -270,7 +268,6 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
     grouped[s].sort((a,b) => a.event_date.localeCompare(b.event_date));
   });
 
-  // Copiar programação do mês anterior
   const handleCopyPreviousMonth = async () => {
     const prevMonthEvents = allEvents.filter(e => e.month === month - 1);
     if (prevMonthEvents.length === 0) {
@@ -307,7 +304,6 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
     }
   };
 
-  // Lógica de Renderização do Calendário em Grade
   const renderCalendarGrid = () => {
     const firstDayIndex = new Date(year, month - 1, 1).getDay();
     const totalDays = new Date(year, month, 0).getDate();
@@ -316,12 +312,10 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const cells = [];
 
-    // Células vazias iniciais
     for (let i = 0; i < firstDayIndex; i++) {
       cells.push(<div key={`empty-${i}`} className="calendar-cell empty" />);
     }
 
-    // Dias do mês
     for (let day = 1; day <= totalDays; day++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayEvents = events.filter(e => e.event_date === dateStr);
@@ -506,7 +500,6 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
 function YearDashboard({ events, onSelectMonth }) {
-  // Calculando estatísticas rápidas
   let countEnsaios = 0;
   let countCultos = 0;
   let countMocidade = 0;
@@ -521,7 +514,6 @@ function YearDashboard({ events, onSelectMonth }) {
     }
   });
 
-  // Agrupando por mês para exibir no grid
   const countsByMonth = {};
   Array.from({ length: 12 }, (_, i) => i + 1).forEach(m => { countsByMonth[m] = 0; });
   events.forEach(ev => {
@@ -530,7 +522,6 @@ function YearDashboard({ events, onSelectMonth }) {
     }
   });
 
-  // Filtrar os próximos 5 eventos a partir de hoje
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingEvents = events
     .filter(ev => ev.event_date >= todayStr)
@@ -547,42 +538,42 @@ function YearDashboard({ events, onSelectMonth }) {
 
       <div className="dashboard-stats">
         <div className="stat-card">
-          <div className="stat-icon blue">
-            <TotalEventsIcon />
-          </div>
           <div className="stat-info">
             <span className="stat-value">{events.length}</span>
             <span className="stat-label">Total de Eventos</span>
           </div>
+          <div className="stat-icon blue">
+            <TotalEventsIcon />
+          </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon amber">
-            <EnsaioIcon />
-          </div>
           <div className="stat-info">
             <span className="stat-value">{countEnsaios}</span>
             <span className="stat-label">Ensaios</span>
           </div>
+          <div className="stat-icon amber">
+            <EnsaioIcon />
+          </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon green">
-            <CultoIcon />
-          </div>
           <div className="stat-info">
             <span className="stat-value">{countCultos}</span>
             <span className="stat-label">Cultos</span>
           </div>
+          <div className="stat-icon green">
+            <CultoIcon />
+          </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon purple">
-            <MocidadeIcon />
-          </div>
           <div className="stat-info">
             <span className="stat-value">{countMocidade}</span>
             <span className="stat-label">Mocidade</span>
+          </div>
+          <div className="stat-icon purple">
+            <MocidadeIcon />
           </div>
         </div>
       </div>
@@ -632,9 +623,11 @@ function YearDashboard({ events, onSelectMonth }) {
           const count = countsByMonth[m] || 0;
           return (
             <div key={m} className="month-card" onClick={() => onSelectMonth(m)}>
-              <div className="month-card-name">{name}</div>
-              <div className="month-card-count">
-                {count === 0 ? 'Nenhum evento cadastrado' : `${count} evento${count !== 1 ? 's' : ''}`}
+              <div>
+                <div className="month-card-name">{name}</div>
+                <div className="month-card-count">
+                  {count === 0 ? 'Nenhum evento cadastrado' : `${count} evento${count !== 1 ? 's' : ''}`}
+                </div>
               </div>
               {count > 0 && (
                 <div className="month-card-badge">Ativo</div>
@@ -659,7 +652,6 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
 
   const [modal, setModal] = useState(null);
 
-  // Agrupar resultados por mês
   const grouped = {};
   filtered.forEach(ev => {
     if (!grouped[ev.month]) grouped[ev.month] = [];
@@ -759,7 +751,6 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modo Escuro
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light';
   });
@@ -827,7 +818,6 @@ export default function App() {
     }
   };
 
-  // Computa a contagem de eventos por mês para a sidebar
   const countsByMonth = {};
   Array.from({ length: 12 }, (_, i) => i + 1).forEach(m => { countsByMonth[m] = 0; });
   events.forEach(ev => {
@@ -857,18 +847,6 @@ export default function App() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="sidebar-search">
-            <span className="sidebar-search-icon">
-              <SearchIcon size={14} />
-            </span>
-            <input 
-              type="text" 
-              placeholder="Buscar evento..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
           <button 
             className={`sidebar-link ${selectedMonth === null && !searchTerm ? 'active' : ''}`}
             onClick={() => { setSelectedMonth(null); setSearchTerm(''); setSidebarOpen(false); }}
@@ -909,31 +887,71 @@ export default function App() {
           
           <div className="sidebar-footer" style={{ borderTop: 'none', padding: '8px 0 16px' }}>
             <span>Ano {CURRENT_YEAR}</span>
-            <button 
-              className="btn btn-ghost btn-sm btn-icon" 
-              style={{ color: 'var(--sb-text)', padding: '4px' }}
-              onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-              title={theme === 'light' ? 'Ativar Modo Escuro' : 'Ativar Modo Claro'}
-            >
-              {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
-            </button>
           </div>
         </div>
       </aside>
 
       {/* Main Workspace Area */}
       <div className="main-workspace">
-        {/* Mobile Header (Hidden on Desktop) */}
+        {/* Workspace Header (GFA Inspired) */}
+        <header className="workspace-header">
+          <div className="header-left">
+            <button className="mobile-menu-btn no-print" onClick={() => setSidebarOpen(true)} style={{ display: 'none' }}>
+              <MenuIcon />
+            </button>
+            
+            <div className="header-search-wrapper no-print">
+              <span className="header-search-icon">
+                <SearchIcon size={14} />
+              </span>
+              <input 
+                type="text" 
+                placeholder="Buscar evento..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="header-right no-print">
+            <button 
+              className="btn btn-ghost btn-sm btn-icon" 
+              onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+              title={theme === 'light' ? 'Ativar Modo Escuro' : 'Ativar Modo Claro'}
+            >
+              {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
+            </button>
+            
+            <div className="user-profile">
+              <div className="user-info">
+                <span className="user-name">Administrador</span>
+                <span className="user-role">CCB Iporã-PR</span>
+              </div>
+              <div className="user-avatar">ADM</div>
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile Header (Fallback on small screens) */}
         <header className="mobile-header">
           <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
             <MenuIcon />
           </button>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 600, fontSize: '13px' }}>
-              {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Visão Geral'}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              CCB Iporã-PR
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              className="btn btn-ghost btn-sm btn-icon" 
+              onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+              style={{ padding: '4px' }}
+            >
+              {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
+            </button>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontWeight: 600, fontSize: '13px' }}>
+                {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Visão Geral'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                CCB Iporã-PR
+              </div>
             </div>
           </div>
         </header>
