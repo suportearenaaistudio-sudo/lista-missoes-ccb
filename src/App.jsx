@@ -1210,6 +1210,8 @@ export default function App() {
     );
   }
 
+  const activeMonthName = selectedMonth ? MONTHS[selectedMonth - 1] : '';
+
   // Render normal layout (Admin Panel or Public Area)
   return (
     <div className="app">
