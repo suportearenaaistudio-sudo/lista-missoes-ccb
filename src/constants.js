@@ -59,6 +59,15 @@ export function buildEventLabel(ev) {
       label += `Ensaio Regional em ${ev.local}`;
     } else if (parcial) {
       label += `Ensaio Parcial em ${ev.local}`;
+    } else if (ev.local === 'Iporã') {
+      // Diferencia meses ímpares (Ensaio Local) e meses pares (Ensaio de Iporã e Região)
+      const cleanDateStr = ev.event_date.includes('T') ? ev.event_date.split('T')[0] : ev.event_date;
+      const month = parseInt(cleanDateStr.split('-')[1]);
+      if (month % 2 === 0) {
+        label += `Ensaio de Iporã e Região`;
+      } else {
+        label += `Ensaio Local em Iporã`;
+      }
     } else {
       label += `Ensaio Local em ${ev.local}`;
     }
