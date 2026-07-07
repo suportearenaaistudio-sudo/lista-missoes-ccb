@@ -2,14 +2,17 @@
 const BASE = import.meta.env.VITE_API_URL || '/api';
 
 export async function fetchEvents(month, year) {
-  const res = await fetch(`${BASE}/events?month=${month}&year=${year}`);
+  const res = await fetch(`${BASE}/events?month=${month}&year=${year}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Erro ao carregar eventos');
   return res.json();
 }
 
 export async function fetchAllEvents(year) {
-  const res = await fetch(`${BASE}/events?year=${year}`);
-  if (!res.ok) throw new Error('Erro ao carregar todos os eventos');
+  const res = await fetch(`${BASE}/events?year=${year}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Erro ${res.status}: ${text.substring(0, 100)}`);
+  }
   return res.json();
 }
 
