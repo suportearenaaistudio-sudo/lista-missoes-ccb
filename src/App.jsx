@@ -1037,8 +1037,13 @@ export default function App() {
     }
   }, [isAdminMode]);
 
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const isAdm = window.location.pathname.startsWith('/adm');
+    return isAdm ? null : (new Date().getMonth() + 1);
+  });
+  const [selectedYear, setSelectedYear] = useState(() => {
+    return new Date().getFullYear();
+  });
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
