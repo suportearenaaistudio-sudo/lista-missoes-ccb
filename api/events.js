@@ -8,7 +8,7 @@ import { neon } from '@neondatabase/serverless';
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -16,6 +16,36 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
+    // Para POST, PUT, DELETE, exige autenticação do admin
+    if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Não autorizado. Token ausente.' });
+      }
+      const token = authHeader.split(' ')[1];
+      
+      let emailAuthorized = false;
+      if (process.env.NODE_ENV === 'development' && token === 'mock-admin-token') {
+        emailAuthorized = true;
+      } else {
+        try {
+          const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+          if (verifyRes.ok) {
+            const payload = await verifyRes.json();
+            if (payload.email === 'vitorpradotamos@gmail.com') {
+              emailAuthorized = true;
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao verificar token com o Google:', e);
+        }
+      }
+
+      if (!emailAuthorized) {
+        return res.status(403).json({ error: 'Acesso negado. Apenas o e-mail vitorpradotamos@gmail.com possui autorização.' });
+      }
+    }
+
     if (req.method === 'GET') {
       const { month, year } = req.query;
       if (!year) return res.status(400).json({ error: 'year is required' });

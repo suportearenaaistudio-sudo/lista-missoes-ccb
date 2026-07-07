@@ -287,13 +287,31 @@ function PrintPreview({ events, month, year, onClose }) {
 }
 
 // ─── Month Editor ─────────────────────────────────────────────────────────────
-function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack }) {
+function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true }) {
   const [modal, setModal] = useState(null);
   const [showPrint, setShowPrint] = useState(false);
   const [viewTab, setViewTab] = useState('list');
   const [copying, setCopying] = useState(false);
   const calendarRef = useRef(null);
- 
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [selectedDay, setSelectedDay] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const today = new Date();
+    if (today.getMonth() + 1 === month && today.getFullYear() === year) {
+      setSelectedDay(today.getDate());
+    } else {
+      setSelectedDay(1);
+    }
+  }, [month, year]);
+
   const handleDownloadImage = async () => {
     if (!calendarRef.current) return;
     try {
@@ -363,7 +381,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
     }
   };
 
-  const renderCalendarGrid = () => {
+  const renderDesktopCalendarGrid = () => {
     const firstDayIndex = new Date(year, month - 1, 1).getDay();
     const totalDays = new Date(year, month, 0).getDate();
     const todayStr = new Date().toISOString().split('T')[0];
@@ -387,7 +405,8 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
         <div 
           key={`day-${day}`} 
           className={`calendar-cell ${isToday ? 'today' : ''}`}
-          onClick={() => setModal({ mode: 'add', event: { event_date: dateStr } })}
+          onClick={() => isAdmin && setModal({ mode: 'add', event: { event_date: dateStr } })}
+          style={{ cursor: isAdmin ? 'pointer' : 'default' }}
         >
           <div className="calendar-cell-header">
             <span className="calendar-day-num">{day}</span>
@@ -401,6 +420,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
                   className={`calendar-event-tag tag-${badge || 'custom'}`}
                   title={`${ev.event_type} - ${ev.local} (${ev.time})`}
                   onClick={(e) => {
+                    if (!isAdmin) return;
                     e.stopPropagation();
                     setModal({ mode: 'edit', event: ev });
                   }}
@@ -426,6 +446,68 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
     );
   };
 
+  const renderCalendarGrid = () => {
+    if (!isMobile) {
+      return renderDesktopCalendarGrid();
+    }
+
+    const firstDayIndex = new Date(year, month - 1, 1).getDay();
+    const totalDays = new Date(year, month, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const cells = [];
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push(<div key={`empty-${i}`} className="calendar-cell empty" />);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(e => {
+        const clean = e.event_date.includes('T') ? e.event_date.split('T')[0] : e.event_date;
+        return clean === dateStr;
+      });
+      const isToday = dateStr === todayStr;
+      const isSelected = day === selectedDay;
+
+      cells.push(
+        <div 
+          key={`day-${day}`} 
+          className={`calendar-cell mobile-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+          onClick={() => setSelectedDay(day)}
+        >
+          <span className="calendar-day-num">{day}</span>
+          {dayEvents.length > 0 && (
+            <div className="calendar-cell-dots">
+              {dayEvents.slice(0, 3).map((ev) => {
+                const badge = getSectionBadge(ev);
+                return <span key={ev.id} className={`cell-dot dot-${badge || 'custom'}`} />;
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '8px' }}>
+          {weekdays.map(d => <div key={d} className="calendar-weekday-header">{d}</div>)}
+        </div>
+        <div className="calendar-grid-mobile">
+          {cells}
+        </div>
+      </div>
+    );
+  };
+
+  const selectedDateStr = `${year}-${String(month).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+  const selectedDayEvents = events.filter(e => {
+    const clean = e.event_date.includes('T') ? e.event_date.split('T')[0] : e.event_date;
+    return clean === selectedDateStr;
+  });
+
   return (
     <div>
       <button className="back-btn" onClick={onBack}>
@@ -438,7 +520,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
           <p className="page-subtitle">{events.length} evento{events.length !== 1 ? 's' : ''} cadastrado{events.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="btn-group">
-          {events.length === 0 && month > 1 && (
+          {isAdmin && events.length === 0 && month > 1 && (
             <button className="btn btn-outline" onClick={handleCopyPreviousMonth} disabled={copying}>
               {copying ? 'Copiando...' : `Copiar de ${MONTHS[month - 2]}`}
             </button>
@@ -446,9 +528,11 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
           <button className="btn btn-outline" onClick={() => setShowPrint(true)}>
             <Printer /> Visualizar Impressão
           </button>
-          <button className="btn btn-primary" onClick={() => setModal({ mode: 'add', event: null })}>
-            <Plus /> Novo Evento
-          </button>
+          {isAdmin && (
+            <button className="btn btn-primary" onClick={() => setModal({ mode: 'add', event: null })}>
+              <Plus /> Novo Evento
+            </button>
+          )}
         </div>
       </div>
 
@@ -470,23 +554,87 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
               <DownloadIcon /> Baixar Calendário (Imagem)
             </button>
           </div>
- 
-          <div ref={calendarRef} className="calendar-capture-container">
-            <div className="calendar-capture-header">
-              <div>
-                <h2 className="calendar-capture-title">{monthName} {year}</h2>
-                <div className="calendar-capture-subtitle">CCB Região de Iporã-PR — Agenda Mensal</div>
-              </div>
-              <div className="calendar-capture-legend">
-                <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
-                <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
-                <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
-                <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
-                <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
-              </div>
-            </div>
+
+          <div className="mobile-calendar-container">
             {renderCalendarGrid()}
           </div>
+
+          {/* Hidden/Off-screen container for high-res desktop landscape image downloads */}
+          <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+            <div ref={calendarRef} className="calendar-capture-container" style={{ width: '1024px', minWidth: '1024px', background: 'var(--surface)', padding: '24px' }}>
+              <div className="calendar-capture-header" style={{ minWidth: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '16px' }}>
+                <div>
+                  <h2 className="calendar-capture-title" style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>{monthName} {year}</h2>
+                  <div className="calendar-capture-subtitle" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, marginTop: '4px' }}>CCB Região de Iporã-PR — Agenda Mensal</div>
+                </div>
+                <div className="calendar-capture-legend" style={{ display: 'flex', gap: '12px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                  <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
+                  <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
+                  <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
+                  <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
+                  <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
+                </div>
+              </div>
+              {renderDesktopCalendarGrid()}
+            </div>
+          </div>
+
+          {isMobile && (
+            <div className="mobile-day-events-container">
+              <div className="mobile-day-header">
+                <h3>Eventos de {selectedDay} de {monthName}</h3>
+                {isAdmin && (
+                  <button className="btn btn-primary btn-sm btn-icon" title="Novo Evento"
+                    onClick={() => setModal({ mode: 'add', event: { event_date: selectedDateStr } })}>
+                    <Plus size={16} />
+                  </button>
+                )}
+              </div>
+              <div className="mobile-day-events-list">
+                {selectedDayEvents.length > 0 ? (
+                  selectedDayEvents.map(ev => {
+                    const badge = getSectionBadge(ev);
+                    const warnings = checkRuleViolations(ev, allEvents);
+                    return (
+                      <div key={ev.id} className="mobile-event-card">
+                        <div className="mobile-event-time-badge">
+                          <span className="time">{ev.time}</span>
+                          {badge && <span className={`event-badge badge-${badge}`}>{badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}</span>}
+                        </div>
+                        <div className="mobile-event-info">
+                          <span className="location">{ev.local}</span>
+                          <span className="type">{ev.event_type === 'Ensaio' ? (ev.is_parcial ? 'Ensaio Parcial' : 'Ensaio Local') : ev.event_type}</span>
+                          {ev.observation && ev.observation !== '__seeded__' && (
+                            <span className="observation">{ev.observation}</span>
+                          )}
+                          {warnings.length > 0 && (
+                            <div className="mobile-event-warning">
+                              <AlertIcon size={12} />
+                              <span>{warnings.join(', ')}</span>
+                            </div>
+                          )}
+                        </div>
+                        {isAdmin && (
+                          <div className="mobile-event-actions">
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setModal({ mode: 'edit', event: ev })}>
+                              <Pencil size={14} />
+                            </button>
+                            <button className="btn btn-danger btn-sm btn-icon" onClick={() => onDelete(ev.id)}>
+                              <Trash size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="mobile-no-events">
+                    Nenhum evento cadastrado neste dia.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         SECTION_ORDER.map(section => {
@@ -525,16 +673,18 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
                           {badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}
                         </span>
                       )}
-                      <div className="event-actions">
-                        <button className="btn btn-ghost btn-sm btn-icon" title="Editar"
-                          onClick={() => setModal({ mode: 'edit', event: ev })}>
-                          <Pencil />
-                        </button>
-                        <button className="btn btn-danger btn-sm btn-icon" title="Excluir"
-                          onClick={() => onDelete(ev.id)}>
-                          <Trash />
-                        </button>
-                      </div>
+                      {isAdmin && (
+                        <div className="event-actions">
+                          <button className="btn btn-ghost btn-sm btn-icon" title="Editar"
+                            onClick={() => setModal({ mode: 'edit', event: ev })}>
+                            <Pencil />
+                          </button>
+                          <button className="btn btn-danger btn-sm btn-icon" title="Excluir"
+                            onClick={() => onDelete(ev.id)}>
+                            <Trash />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -553,10 +703,12 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
           <p>Nenhum evento cadastrado neste mês.</p>
-          <button className="btn btn-primary" style={{ marginTop: '12px' }}
-            onClick={() => setModal({ mode: 'add', event: null })}>
-            <Plus /> Adicionar primeiro evento
-          </button>
+          {isAdmin && (
+            <button className="btn btn-primary" style={{ marginTop: '12px' }}
+              onClick={() => setModal({ mode: 'add', event: null })}>
+              <Plus /> Adicionar primeiro evento
+            </button>
+          )}
         </div>
       )}
 
@@ -840,6 +992,46 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
 
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
+  const [isAdminMode, setIsAdminMode] = useState(window.location.pathname.startsWith('/adm'));
+  const [adminUser, setAdminUser] = useState(() => {
+    const cached = localStorage.getItem('admin_user');
+    return cached ? JSON.parse(cached) : null;
+  });
+
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+  const nextYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+
+  const [pwaPromptState, setPwaPromptState] = useState('hidden');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // Capture beforeinstallprompt event for Android native prompt
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  // Show banner on first load (if not admin and not already prompted)
+  useEffect(() => {
+    if (!isAdminMode) {
+      const isPrompted = localStorage.getItem('pwa_prompt_shown');
+      if (!isPrompted) {
+        const timer = setTimeout(() => {
+          setPwaPromptState('banner');
+        }, 2500);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setPwaPromptState('hidden');
+    }
+  }, [isAdminMode]);
+
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [events, setEvents] = useState([]);
@@ -857,11 +1049,47 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const loadAll = async () => {
+  // Handle simple client-side routing
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setIsAdminMode(path.startsWith('/adm'));
+  };
+
+  useEffect(() => {
+    const handlePop = () => {
+      setIsAdminMode(window.location.pathname.startsWith('/adm'));
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  // Initialize selected month/year based on route
+  useEffect(() => {
+    if (!isAdminMode) {
+      setSelectedMonth(currentMonth);
+      setSelectedYear(currentYear);
+    } else {
+      setSelectedMonth(null); // Admin panel dashboard view
+      setSelectedYear(CURRENT_YEAR);
+    }
+  }, [isAdminMode]);
+
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllEvents(selectedYear);
-      setEvents(data);
+      if (isAdminMode) {
+        const data = await fetchAllEvents(selectedYear);
+        setEvents(data);
+      } else {
+        // Public list loads only current year (and next year if crossing boundary)
+        const currentData = await fetchAllEvents(currentYear);
+        let combined = [...currentData];
+        if (nextYear !== currentYear) {
+          const nextData = await fetchAllEvents(nextYear);
+          combined = [...combined, ...nextData];
+        }
+        setEvents(combined);
+      }
     } catch (err) {
       setToast('Erro ao carregar dados: ' + err.message);
     } finally {
@@ -870,8 +1098,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadAll();
-  }, [selectedYear]);
+    loadData();
+  }, [selectedYear, isAdminMode]);
 
   // Rola para o topo sempre que mudar o mês selecionado ou houver alteração na busca
   useEffect(() => {
@@ -924,41 +1152,92 @@ export default function App() {
     }
   };
 
-  const countsByMonth = {};
-  Array.from({ length: 12 }, (_, i) => i + 1).forEach(m => { countsByMonth[m] = 0; });
-  events.forEach(ev => {
-    if (countsByMonth[ev.month] !== undefined) {
-      countsByMonth[ev.month]++;
+  const handleGoogleLogin = (response) => {
+    const token = response.credential;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (payload.email === 'vitorpradotamos@gmail.com') {
+        localStorage.setItem('admin_token', token);
+        localStorage.setItem('admin_user', JSON.stringify(payload));
+        setAdminUser(payload);
+        setToast('Login efetuado com sucesso!');
+      } else {
+        setToast('Acesso negado: E-mail ' + payload.email + ' não autorizado.');
+      }
+    } catch (err) {
+      setToast('Erro ao processar login: ' + err.message);
     }
-  });
+  };
 
-  const activeMonthName = selectedMonth ? MONTHS[selectedMonth - 1] : '';
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    setAdminUser(null);
+    setToast('Sessão encerrada com sucesso.');
+  };
 
+  const handleMockLogin = () => {
+    const mockUser = { email: 'vitorpradotamos@gmail.com', name: 'Administrador (Local)', picture: '' };
+    localStorage.setItem('admin_token', 'mock-admin-token');
+    localStorage.setItem('admin_user', JSON.stringify(mockUser));
+    setAdminUser(mockUser);
+    setToast('Acesso administrativo de desenvolvimento autorizado!');
+  };
+
+  us  // Render RESTRICTED Admin Login Card
+  if (isAdminMode && !adminUser) {
+    return (
+      <div className="admin-login-overlay">
+        <div className="admin-login-card">
+          <img src="/logo.png" alt="CCB" className="admin-login-logo" />
+          <h1 className="admin-login-title">Área Administrativa</h1>
+          <p className="admin-login-subtitle">Apenas para administradores autorizados (vitorpradotamos@gmail.com)</p>
+          
+          <div id="google-login-btn" style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}></div>
+          
+          {import.meta.env.DEV && (
+            <button className="btn btn-outline" onClick={handleMockLogin} style={{ marginTop: '20px', width: '100%', justifyContent: 'center' }}>
+              Entrar como Desenvolvedor (Bypass)
+            </button>
+          )}
+
+          <button className="btn btn-ghost" onClick={() => navigateTo('/')} style={{ marginTop: '16px', fontSize: '12px' }}>
+            ← Voltar para a lista pública
+          </button>
+        </div>
+        {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      </div>
+    );
+  }
+
+  // Render normal layout (Admin Panel or Public Area)
   return (
     <div className="app">
       <div className="main-workspace">
         <header className="workspace-header">
           <div className="header-left">
-            <div className="app-brand no-print">
+            <div className="app-brand no-print" style={{ cursor: 'pointer' }} onClick={() => navigateTo('/')}>
               <img src="/logo.png" alt="CCB" className="app-brand-logo" />
               <div className="app-brand-text">
                 <span className="app-brand-title">Lista de Missões</span>
                 <span className="app-brand-subtitle">CCB Iporã-PR</span>
               </div>
             </div>
-            <div className="header-search-wrapper no-print">
-              <span className="header-search-icon">
-                <SearchIcon size={14} />
-              </span>
-              <input 
-                type="text" 
-                placeholder="Buscar evento..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            {isAdminMode && (
+              <div className="header-search-wrapper no-print">
+                <span className="header-search-icon">
+                  <SearchIcon size={14} />
+                </span>
+                <input 
+                  type="text" 
+                  placeholder="Buscar evento..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            )}
           </div>
- 
+  
           <div className="header-right no-print">
             <button 
               className="btn btn-ghost btn-sm btn-icon" 
@@ -968,16 +1247,26 @@ export default function App() {
               {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
             </button>
             
-            <div className="user-profile">
-              <div className="user-info">
-                <span className="user-name">Administrador</span>
-                <span className="user-role">CCB Iporã-PR</span>
+            {isAdminMode ? (
+              <div className="user-profile">
+                <div className="user-info">
+                  <span className="user-name">{adminUser.name || 'Administrador'}</span>
+                  <span className="user-role" style={{ color: 'var(--accent-red)', cursor: 'pointer', fontWeight: 600 }} onClick={handleLogout}>Sair (Logout)</span>
+                </div>
+                {adminUser.picture ? (
+                  <img src={adminUser.picture} alt="Avatar" className="user-avatar" style={{ objectFit: 'cover' }} />
+                ) : (
+                  <div className="user-avatar">ADM</div>
+                )}
               </div>
-              <div className="user-avatar">ADM</div>
-            </div>
+            ) : (
+              <button className="btn btn-outline btn-sm" onClick={() => navigateTo('/adm')}>
+                Área Administrativa
+              </button>
+            )}
           </div>
         </header>
- 
+  
         <header className="mobile-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -998,18 +1287,67 @@ export default function App() {
                 {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
               </button>
             </div>
-            {selectedMonth !== null && (
-              <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
-                Painel
-              </button>
-            )}
+            
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {!isAdminMode && (
+                <button className="btn btn-ghost btn-sm" onClick={() => navigateTo('/adm')} style={{ fontSize: '11px' }}>
+                  Admin
+                </button>
+              )}
+              {isAdminMode && selectedMonth !== null && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
+                  Painel
+                </button>
+              )}
+            </div>
           </div>
         </header>
- 
+  
         <main className="main-body">
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh' }}>
               <div className="spinner" />
+            </div>
+          ) : !isAdminMode ? (
+            /* Public View: Only shows events of current month and next month with monthly switcher */
+            <div>
+              <div className="public-welcome-header" style={{ marginBottom: '24px' }}>
+                <h1 className="page-title">Lista de Missões</h1>
+                <p className="page-subtitle">Exibindo eventos oficiais da Congregação Cristã no Brasil para a região de Iporã-PR.</p>
+              </div>
+
+              <div className="public-month-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <button 
+                  className={`view-tab ${selectedMonth === currentMonth ? 'active' : ''}`}
+                  onClick={() => { setSelectedMonth(currentMonth); setSelectedYear(currentYear); }}
+                  style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 600 }}
+                >
+                  {MONTHS[currentMonth - 1]} {currentYear}
+                </button>
+                <button 
+                  className={`view-tab ${selectedMonth === nextMonth ? 'active' : ''}`}
+                  onClick={() => { setSelectedMonth(nextMonth); setSelectedYear(nextYear); }}
+                  style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 600 }}
+                >
+                  {MONTHS[nextMonth - 1]} {nextYear}
+                </button>
+              </div>
+
+              <MonthEditor 
+                month={selectedMonth} 
+                year={selectedYear} 
+                events={events.filter(e => {
+                  if (e.month === selectedMonth && e.year === selectedYear) return true;
+                  const isNextMonth = e.month === selectedMonth + 1 || (selectedMonth === 12 && e.month === 1);
+                  if (isNextMonth && e.show_in_prev_month) return true;
+                  return false;
+                })}
+                allEvents={events}
+                onSave={handleSave}
+                onDelete={handleDelete}
+                onBack={() => {}}
+                isAdmin={false} // Read-only for public visitors
+              />
             </div>
           ) : searchTerm ? (
             <SearchResults
@@ -1044,11 +1382,124 @@ export default function App() {
               onSave={handleSave}
               onDelete={handleDelete}
               onBack={() => setSelectedMonth(null)}
+              isAdmin={true}
             />
-          )
-        }
-      </main>
+          )}
+        </main>
       </div>
+
+      {/* PWA Installation Prompt Overlay & Banner */}
+      {pwaPromptState !== 'hidden' && (
+        <div className={`pwa-prompt-container ${pwaPromptState === 'banner' ? 'banner-mode' : 'overlay-mode'}`}>
+          {pwaPromptState === 'banner' ? (
+            <div className="pwa-banner">
+              <div className="pwa-banner-content">
+                <img src="/logo.png" alt="Logo" className="pwa-banner-logo" />
+                <div style={{ textAlign: 'left' }}>
+                  <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>Deseja instalar o aplicativo em seu celular?</h4>
+                  <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: 'var(--text-secondary)' }}>Acesse rapidamente e até mesmo sem internet.</p>
+                </div>
+              </div>
+              <div className="pwa-banner-actions">
+                <button className="btn btn-outline btn-sm" onClick={() => {
+                  localStorage.setItem('pwa_prompt_shown', 'true');
+                  setPwaPromptState('hidden');
+                }}>Agora não</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setPwaPromptState('select-os')}>Sim</button>
+              </div>
+            </div>
+          ) : (
+            <div className="pwa-overlay" onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                localStorage.setItem('pwa_prompt_shown', 'true');
+                setPwaPromptState('hidden');
+              }
+            }}>
+              <div className="pwa-overlay-card">
+                <button className="pwa-close-btn" onClick={() => {
+                  localStorage.setItem('pwa_prompt_shown', 'true');
+                  setPwaPromptState('hidden');
+                }}>✕</button>
+
+                {pwaPromptState === 'select-os' && (
+                  <div className="pwa-step-os">
+                    <img src="/logo.png" alt="Logo" className="pwa-overlay-logo" />
+                    <h2>Qual é o seu celular?</h2>
+                    <p>Selecione o sistema operacional do seu celular para ver o passo a passo:</p>
+                    <div className="pwa-os-buttons">
+                      <button className="btn btn-outline pwa-os-btn" onClick={() => setPwaPromptState('ios-steps')}>
+                        <span>📱 iPhone (iOS)</span>
+                      </button>
+                      <button className="btn btn-outline pwa-os-btn" onClick={async () => {
+                        if (deferredPrompt) {
+                          deferredPrompt.prompt();
+                          const { outcome } = await deferredPrompt.userChoice;
+                          if (outcome === 'accepted') {
+                            localStorage.setItem('pwa_prompt_shown', 'true');
+                            setPwaPromptState('hidden');
+                            setToast('Instalação iniciada!');
+                          } else {
+                            setPwaPromptState('android-steps');
+                          }
+                          setDeferredPrompt(null);
+                        } else {
+                          setPwaPromptState('android-steps');
+                        }
+                      }}>
+                        <span>🤖 Android</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {pwaPromptState === 'ios-steps' && (
+                  <div className="pwa-step-guide">
+                    <h2>Instalar no iPhone (iOS)</h2>
+                    <p className="pwa-guide-intro">Siga estes passos simples no navegador Safari:</p>
+                    <ol className="pwa-guide-list">
+                      <li>
+                        Toque no botão de <strong>Compartilhar</strong> (ícone de um quadrado com uma seta para cima na barra inferior do Safari).
+                      </li>
+                      <li>
+                        Role o menu de opções para baixo e selecione a opção <strong>Adicionar à Tela de Início</strong>.
+                      </li>
+                      <li>
+                        Toque em <strong>Adicionar</strong> no canto superior direito para confirmar.
+                      </li>
+                    </ol>
+                    <button className="btn btn-primary pwa-guide-ok-btn" onClick={() => {
+                      localStorage.setItem('pwa_prompt_shown', 'true');
+                      setPwaPromptState('hidden');
+                    }}>OK, concluir</button>
+                  </div>
+                )}
+
+                {pwaPromptState === 'android-steps' && (
+                  <div className="pwa-step-guide">
+                    <h2>Instalar no Android</h2>
+                    <p className="pwa-guide-intro">Siga estes passos simples no navegador Chrome:</p>
+                    <ol className="pwa-guide-list">
+                      <li>
+                        Toque nos <strong>três pontinhos</strong> (menu de opções) localizados no canto superior direito do Chrome.
+                      </li>
+                      <li>
+                        Selecione a opção <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.
+                      </li>
+                      <li>
+                        Confirme a operação tocando em <strong>Instalar</strong> ou <strong>Adicionar</strong>.
+                      </li>
+                    </ol>
+                    <button className="btn btn-primary pwa-guide-ok-btn" onClick={() => {
+                      localStorage.setItem('pwa_prompt_shown', 'true');
+                      setPwaPromptState('hidden');
+                    }}>OK, concluir</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>

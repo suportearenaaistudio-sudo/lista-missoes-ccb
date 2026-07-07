@@ -16,10 +16,18 @@ export async function fetchAllEvents(year) {
   return res.json();
 }
 
+function getHeaders() {
+  const token = localStorage.getItem('admin_token') || (import.meta.env.DEV ? 'mock-admin-token' : '');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+}
+
 export async function createEvent(event) {
   const res = await fetch(`${BASE}/events`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(event),
   });
   if (!res.ok) throw new Error('Erro ao criar evento');
@@ -29,7 +37,7 @@ export async function createEvent(event) {
 export async function updateEvent(event) {
   const res = await fetch(`${BASE}/events`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(event),
   });
   if (!res.ok) throw new Error('Erro ao atualizar evento');
@@ -37,13 +45,25 @@ export async function updateEvent(event) {
 }
 
 export async function deleteEvent(id) {
-  const res = await fetch(`${BASE}/events?id=${id}`, { method: 'DELETE' });
+  const token = localStorage.getItem('admin_token') || (import.meta.env.DEV ? 'mock-admin-token' : '');
+  const res = await fetch(`${BASE}/events?id=${id}`, { 
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
   if (!res.ok) throw new Error('Erro ao excluir evento');
   return res.json();
 }
 
 export async function runSetup() {
-  const res = await fetch(`${BASE}/setup`, { method: 'POST' });
+  const token = localStorage.getItem('admin_token') || (import.meta.env.DEV ? 'mock-admin-token' : '');
+  const res = await fetch(`${BASE}/setup`, { 
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
   if (!res.ok) throw new Error('Erro no setup');
   return res.json();
 }

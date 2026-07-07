@@ -1543,3 +1543,419 @@ body.dark .calendar-capture-subtitle {
 body.dark .calendar-capture-legend {
   color: #94a3b8;
 }
+
+/* ===== ADMIN LOGIN ===== */
+.admin-login-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #3c4d59 0%, #151c22 100%);
+  padding: 24px;
+}
+.admin-login-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: var(--radius-xl);
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.admin-login-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  background: white;
+  border-radius: var(--radius);
+  padding: 8px;
+  display: block;
+}
+.admin-login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+.admin-login-subtitle {
+  font-size: 13px;
+  color: #8A9AA5;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* ===== PUBLIC MONTH TABS ===== */
+.public-month-tabs .view-tab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.public-month-tabs .view-tab:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.public-month-tabs .view-tab.active {
+  background: var(--accent-lime);
+  color: white;
+  border-color: var(--accent-lime);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== MOBILE CALENDAR (IPHONE STYLE) ===== */
+.calendar-grid-mobile {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.calendar-cell.mobile-cell {
+  background: var(--surface);
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50% !important;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+  padding: 2px;
+  min-height: 44px;
+}
+.calendar-cell.mobile-cell:hover {
+  background: var(--surface-hover);
+}
+.calendar-cell.mobile-cell.selected {
+  background: var(--accent-blue) !important;
+  color: white !important;
+  border-color: var(--accent-blue) !important;
+}
+.calendar-cell.mobile-cell.selected .calendar-day-num {
+  color: white !important;
+  font-weight: 700;
+}
+.calendar-cell.mobile-cell.today {
+  border: 1.5px solid var(--accent-lime);
+}
+.calendar-cell.mobile-cell.today:not(.selected) .calendar-day-num {
+  color: var(--accent-lime);
+  font-weight: 700;
+}
+.calendar-cell-dots {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  position: absolute;
+  bottom: 4px;
+}
+.cell-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+.cell-dot.dot-local { background: #94a3b8; }
+.cell-dot.dot-parcial { background: var(--accent-amber); }
+.cell-dot.dot-regional { background: var(--accent-purple); }
+.cell-dot.dot-culto { background: var(--accent-blue); }
+.cell-dot.dot-jovens { background: var(--accent-green); }
+.cell-dot.dot-custom { background: #94a3b8; }
+
+.calendar-cell.mobile-cell.selected .cell-dot {
+  background: white !important;
+}
+
+/* ===== MOBILE DETAIL LIST BELOW CALENDAR ===== */
+.mobile-day-events-container {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.mobile-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.mobile-day-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.mobile-day-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mobile-event-card {
+  background: var(--bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.mobile-event-time-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.mobile-event-time-badge .time {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.mobile-event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mobile-event-info .location {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.mobile-event-info .type {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.mobile-event-info .observation {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  border-left: 2px solid var(--border);
+  padding-left: 6px;
+}
+.mobile-event-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent-red);
+  margin-top: 4px;
+}
+.mobile-event-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.mobile-no-events {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Force landscape page orientation for PDF printing and parity layout */
+@media print {
+  @page {
+    size: landscape !important;
+    margin: 0 !important;
+  }
+}
+
+.print-page {
+  flex-shrink: 0;
+}
+
+/* ===== PWA PROMPT SYSTEM (BANNER & OVERLAY) ===== */
+.pwa-prompt-container {
+  font-family: inherit;
+}
+
+/* 1. Floating Banner */
+.pwa-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1500;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  animation: slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 600px) {
+  .pwa-banner {
+    flex-direction: column;
+    align-items: stretch;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    padding: 14px;
+    gap: 12px;
+  }
+}
+
+.pwa-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pwa-banner-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: white;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  object-fit: contain;
+}
+
+.pwa-banner-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* 2. Full screen Glassmorphic Overlay */
+.pwa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 300ms ease;
+}
+
+.pwa-overlay-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  max-width: 460px;
+  width: 100%;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  animation: scaleUp 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.pwa-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 50%;
+  transition: all var(--transition);
+}
+
+.pwa-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.pwa-overlay-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  display: block;
+  background: white;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.pwa-step-os h2, .pwa-step-guide h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.pwa-step-os p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.pwa-os-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pwa-os-btn {
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+  border-radius: var(--radius);
+}
+
+.pwa-guide-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.pwa-guide-list {
+  text-align: left;
+  padding-left: 20px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.pwa-guide-list li {
+  margin-bottom: 12px;
+}
+
+.pwa-guide-ok-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
