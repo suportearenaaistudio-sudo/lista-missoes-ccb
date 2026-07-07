@@ -583,7 +583,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
 }
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
-function YearDashboard({ events, onSelectMonth }) {
+function YearDashboard({ events, onSelectMonth, onResetSchedule }) {
   let countEnsaios = 0;
   let countCultos = 0;
   let countMocidade = 0;
@@ -613,11 +613,14 @@ function YearDashboard({ events, onSelectMonth }) {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 className="page-title">Painel Geral {CURRENT_YEAR}</h1>
           <p className="page-subtitle">Congregação Cristã no Brasil — Região de Iporã-PR</p>
         </div>
+        <button className="btn btn-outline" onClick={onResetSchedule} style={{ fontSize: '13px' }}>
+          Restaurar Padrão Regional
+        </button>
       </div>
 
       <div className="dashboard-stats">
@@ -923,76 +926,9 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* Sidebar Overlay (Mobile only) */}
-      <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} 
-        onClick={() => setSidebarOpen(false)}
-      />
-
-      {/* Sidebar Component */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-logo">CCB</div>
-          <div>
-            <div className="sidebar-brand-title">Lista de Missões</div>
-            <div className="sidebar-brand-subtitle">Região de Iporã-PR</div>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button 
-            className={`sidebar-link ${selectedMonth === null && !searchTerm ? 'active' : ''}`}
-            onClick={() => { setSelectedMonth(null); setSearchTerm(''); setSidebarOpen(false); }}
-          >
-            <span className="sidebar-link-content">
-              <HomeIcon /> Visão Geral
-            </span>
-          </button>
-
-          <div className="sidebar-nav-title">Meses</div>
-
-          {MONTHS.map((name, i) => {
-            const m = i + 1;
-            const count = countsByMonth[m] || 0;
-            return (
-              <button 
-                key={m}
-                className={`sidebar-link ${selectedMonth === m && !searchTerm ? 'active' : ''}`}
-                onClick={() => { setSelectedMonth(m); setSearchTerm(''); setSidebarOpen(false); }}
-              >
-                <span className="sidebar-link-content">
-                  <CalendarIcon /> {name}
-                </span>
-                {count > 0 && <span className="sidebar-badge">{count}</span>}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--sb-border)' }}>
-          <button 
-            className="btn btn-ghost" 
-            style={{ padding: '8px 12px', justifyContent: 'flex-start', color: 'var(--sb-text)', width: '100%', fontSize: '12px' }}
-            onClick={handleResetSchedule}
-          >
-            Restaurar Padrão
-          </button>
-          
-          <div className="sidebar-footer" style={{ borderTop: 'none', padding: '8px 0 16px' }}>
-            <span>Ano {CURRENT_YEAR}</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Workspace Area */}
       <div className="main-workspace">
-        {/* Workspace Header (GFA Inspired) */}
         <header className="workspace-header">
           <div className="header-left">
-            <button className="mobile-menu-btn no-print" onClick={() => setSidebarOpen(true)} style={{ display: 'none' }}>
-              <MenuIcon />
-            </button>
-            
             <div className="header-search-wrapper no-print">
               <span className="header-search-icon">
                 <SearchIcon size={14} />
@@ -1005,7 +941,7 @@ export default function App() {
               />
             </div>
           </div>
-
+ 
           <div className="header-right no-print">
             <button 
               className="btn btn-ghost btn-sm btn-icon" 
@@ -1024,31 +960,34 @@ export default function App() {
             </div>
           </div>
         </header>
-
-        {/* Mobile Header (Fallback on small screens) */}
+ 
         <header className="mobile-header">
-          <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
-            <MenuIcon />
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button 
-              className="btn btn-ghost btn-sm btn-icon" 
-              onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-              style={{ padding: '4px' }}
-            >
-              {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
-            </button>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 600, fontSize: '13px' }}>
-                {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Visão Geral'}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                CCB Iporã-PR
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button 
+                className="btn btn-ghost btn-sm btn-icon" 
+                onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+                style={{ padding: '4px' }}
+              >
+                {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
+              </button>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px' }}>
+                  {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Visão Geral'}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  CCB Iporã-PR
+                </div>
               </div>
             </div>
+            {selectedMonth !== null && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
+                Painel
+              </button>
+            )}
           </div>
         </header>
-
+ 
         <main className="main-body">
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh' }}>
@@ -1068,6 +1007,7 @@ export default function App() {
             <YearDashboard 
               events={events} 
               onSelectMonth={setSelectedMonth} 
+              onResetSchedule={handleResetSchedule}
             />
           ) : (
             <MonthEditor 
