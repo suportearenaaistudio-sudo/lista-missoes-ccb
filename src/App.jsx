@@ -1184,7 +1184,7 @@ export default function App() {
     setToast('Acesso administrativo de desenvolvimento autorizado!');
   };
 
-  us  // Render RESTRICTED Admin Login Card
+  // Render RESTRICTED Admin Login Card
   if (isAdminMode && !adminUser) {
     return (
       <div className="admin-login-overlay">
