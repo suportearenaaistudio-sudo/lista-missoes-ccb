@@ -1371,3 +1371,36 @@ body.dark .validation-warning-banner {
     border-right: none !important;
   }
 }
+
+/* ===== CALENDAR LEGEND ===== */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.dot-local { background: #cbd5e1; border: 1px solid #94a3b8; }
+.legend-dot.dot-parcial { background: var(--accent-amber); }
+.legend-dot.dot-regional { background: var(--accent-purple); }
+.legend-dot.dot-culto { background: var(--accent-blue); }
+.legend-dot.dot-jovens { background: var(--accent-green); }

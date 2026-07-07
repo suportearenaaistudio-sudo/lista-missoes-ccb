@@ -440,6 +440,16 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
         </div>
       )}
 
+      {viewTab === 'calendar' && events.length > 0 && (
+        <div className="calendar-legend">
+          <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
+          <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
+          <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
+          <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
+          <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
+        </div>
+      )}
+
       {viewTab === 'calendar' && events.length > 0 ? (
         renderCalendarGrid()
       ) : (
