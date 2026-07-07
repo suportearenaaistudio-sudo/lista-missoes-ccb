@@ -1306,8 +1306,11 @@ body.dark .validation-warning-banner {
 
 /* ===== SCREEN PRINT ===== */
 @media print {
+  @page {
+    margin: 0 !important;
+  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { background: white !important; color: black !important; margin: 0; }
+  body { background: white !important; color: black !important; margin: 0 !important; }
   body.dark { background: white !important; color: black !important; }
   
   /* Oculta componentes da interface do sistema na impressão, eliminando-os do fluxo */
@@ -1346,7 +1349,7 @@ body.dark .validation-warning-banner {
     width: 100% !important;
     height: 100% !important;
     margin: 0 !important;
-    padding: 10mm 8mm !important;
+    padding: 12mm 15mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     background: white !important;

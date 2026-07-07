@@ -24,6 +24,7 @@ export const SECTIONS = {
   'Culto Unificado': 'CULTO UNIFICADO',
   'Culto de Evangelização': 'CULTO DE EVANGELIZAÇÃO',
   'Reunião de Mocidade': 'REUNIÃO DE MOCIDADE',
+  'Culto de Jovens Unificado': 'REUNIÃO DE MOCIDADE',
 };
 
 export const SECTION_ORDER = [
@@ -90,7 +91,7 @@ export function getSectionBadge(ev) {
   if (type === 'Ensaio Regional') return 'regional';
   if (ev.is_parcial) return 'parcial';
   if (type === 'Culto Unificado' || type === 'Culto de Evangelização') return 'culto';
-  if (type === 'Reunião de Mocidade') return 'mocidade';
+  if (type === 'Reunião de Mocidade' || type === 'Culto de Jovens Unificado') return 'mocidade';
   return null;
 }
 
