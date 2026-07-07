@@ -825,6 +825,15 @@ export default function App() {
     loadAll();
   }, []);
 
+  // Rola para o topo sempre que mudar o mês selecionado ou houver alteração na busca
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    const workspace = document.querySelector('.main-workspace');
+    if (workspace) {
+      workspace.scrollTo({ top: 0 });
+    }
+  }, [selectedMonth, searchTerm]);
+
   const handleSave = async (form) => {
     try {
       if (form.id) {
