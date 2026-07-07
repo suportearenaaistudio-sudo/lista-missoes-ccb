@@ -74,19 +74,13 @@ export default async function handler(req, res) {
       { date: '2026-10-15', time: '19:30', local: 'Cafezal do Sul', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-11-19', time: '19:30', local: 'Cafezal do Sul', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-12-17', time: '19:30', local: 'Cafezal do Sul', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      // NOVA SANTA HELENA (Parcial) - all months
+      // NOVA SANTA HELENA (Parcial) - ODD months only
       { date: '2026-01-09', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-02-13', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-03-13', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-04-10', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-05-08', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-06-12', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-07-10', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-08-14', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-09-11', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-10-09', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-11-13', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
-      { date: '2026-12-11', time: '19:30', local: 'Nova Santa Helena', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       // GUAIPORÃ (Parcial) - all months except December
       { date: '2026-01-27', time: '19:30', local: 'Guaiporã', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
       { date: '2026-02-24', time: '19:30', local: 'Guaiporã', type: 'Ensaio', parcial: true, section: 'ENSAIOS MENSAIS' },
