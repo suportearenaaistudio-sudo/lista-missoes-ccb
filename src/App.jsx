@@ -322,7 +322,10 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
 
     for (let day = 1; day <= totalDays; day++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayEvents = events.filter(e => e.event_date === dateStr);
+      const dayEvents = events.filter(e => {
+        const clean = e.event_date.includes('T') ? e.event_date.split('T')[0] : e.event_date;
+        return clean === dateStr;
+      });
       const isToday = dateStr === todayStr;
 
       cells.push(
