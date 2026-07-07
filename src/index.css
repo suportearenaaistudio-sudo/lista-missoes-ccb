@@ -1306,18 +1306,32 @@ body.dark .validation-warning-banner {
 
 /* ===== SCREEN PRINT ===== */
 @media print {
+  @page {
+    size: landscape;
+  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: white !important; color: black !important; margin: 0; }
   body.dark { background: white !important; color: black !important; }
   .no-print { display: none !important; }
+  .print-preview-overlay {
+    position: static !important;
+    background: white !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
   .print-page {
     width: 100%;
     box-shadow: none;
     border-radius: 0;
     padding: 8mm;
     min-height: 0;
+    background: white !important;
   }
   .print-column {
-    border-right-color: #000 !important;
+    border-right: 1px solid #000 !important;
+  }
+  .print-column:last-child {
+    border-right: none !important;
   }
 }

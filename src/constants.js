@@ -40,7 +40,9 @@ export const YEAR = 2026;
 // Format a date string (YYYY-MM-DD) as DD/MM/YYYY
 export function formatDate(dateStr) {
   if (!dateStr) return '';
-  const [y, m, d] = dateStr.split('-');
+  // Trata formato ISO (ex: 2026-07-03T00:00:00.000Z) extraindo apenas a data YYYY-MM-DD
+  const cleanDateStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  const [y, m, d] = cleanDateStr.split('-');
   return `${d}/${m}/${y}`;
 }
 
