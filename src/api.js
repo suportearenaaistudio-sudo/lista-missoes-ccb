@@ -7,6 +7,12 @@ export async function fetchEvents(month, year) {
   return res.json();
 }
 
+export async function fetchAllEvents(year) {
+  const res = await fetch(`${BASE}/events?year=${year}`);
+  if (!res.ok) throw new Error('Erro ao carregar todos os eventos');
+  return res.json();
+}
+
 export async function createEvent(event) {
   const res = await fetch(`${BASE}/events`, {
     method: 'POST',

@@ -82,3 +82,38 @@ export function getSectionBadge(ev) {
   if (type === 'Reunião de Mocidade') return 'mocidade';
   return null;
 }
+
+export function checkRuleViolations(event, allEvents) {
+  const violations = [];
+  if (!event || !event.event_date) return violations;
+
+  const [y, m, d] = event.event_date.split('-');
+  const month = parseInt(m);
+  const local = event.local;
+  const type = event.event_type;
+
+  // Regra de Rodízio para Ensaios (Nova Santa Helena nos meses ímpares, Vila Nilza nos meses pares)
+  if (type === 'Ensaio' || type === 'Ensaio Regional') {
+    if (local === 'Nova Santa Helena' && month % 2 === 0) {
+      violations.push('Nova Santa Helena deve realizar ensaios apenas em meses ímpares.');
+    }
+    if (local === 'Vila Nilza' && month % 2 !== 0) {
+      violations.push('Vila Nilza deve realizar ensaios apenas em meses pares.');
+    }
+  }
+
+  // Regra de Conflito de Horário (mesmo local, data e horário)
+  if (allEvents && allEvents.length > 0) {
+    const conflict = allEvents.find(e => 
+      e.id !== event.id && 
+      e.event_date === event.event_date && 
+      e.time === event.time && 
+      e.local === local
+    );
+    if (conflict) {
+      violations.push(`Conflito de horário: já existe o evento "${conflict.event_type}" neste mesmo local e horário.`);
+    }
+  }
+
+  return violations;
+}

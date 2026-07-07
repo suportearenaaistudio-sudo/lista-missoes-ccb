@@ -17,12 +17,22 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const { month, year } = req.query;
-      if (!month || !year) return res.status(400).json({ error: 'month and year are required' });
-      const rows = await sql`
-        SELECT * FROM events 
-        WHERE month = ${parseInt(month)} AND year = ${parseInt(year)}
-        ORDER BY event_date ASC, id ASC
-      `;
+      if (!year) return res.status(400).json({ error: 'year is required' });
+      
+      let rows;
+      if (month) {
+        rows = await sql`
+          SELECT * FROM events 
+          WHERE month = ${parseInt(month)} AND year = ${parseInt(year)}
+          ORDER BY event_date ASC, id ASC
+        `;
+      } else {
+        rows = await sql`
+          SELECT * FROM events 
+          WHERE year = ${parseInt(year)}
+          ORDER BY event_date ASC, id ASC
+        `;
+      }
       return res.status(200).json(rows);
     }
 
@@ -38,11 +48,15 @@ export default async function handler(req, res) {
 
     if (req.method === 'PUT') {
       const { id, event_date, time, local, event_type, is_parcial, observation, section } = req.body;
+      const [y, m, d] = event_date.split('-');
+      const monthVal = parseInt(m);
+      const yearVal = parseInt(y);
       const rows = await sql`
         UPDATE events 
         SET event_date = ${event_date}, time = ${time}, local = ${local}, 
             event_type = ${event_type}, is_parcial = ${is_parcial ?? false}, 
-            observation = ${observation ?? ''}, section = ${section}
+            observation = ${observation ?? ''}, section = ${section},
+            month = ${monthVal}, year = ${yearVal}
         WHERE id = ${id}
         RETURNING *
       `;
