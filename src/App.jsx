@@ -294,11 +294,11 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
   const [copying, setCopying] = useState(false);
   const calendarRef = useRef(null);
   
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [selectedDay, setSelectedDay] = useState(1);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -455,7 +455,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     const totalDays = new Date(year, month, 0).getDate();
     const todayStr = new Date().toISOString().split('T')[0];
 
-    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weekdays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
     const cells = [];
 
     for (let i = 0; i < firstDayIndex; i++) {
