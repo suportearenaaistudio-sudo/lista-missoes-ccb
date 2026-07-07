@@ -616,8 +616,16 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
     <div>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="page-title">Painel Geral {CURRENT_YEAR}</h1>
-          <p className="page-subtitle">Congregação Cristã no Brasil — Região de Iporã-PR</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year - 1)} style={{ padding: '4px' }} title="Ano Anterior">
+              <ChevronLeft />
+            </button>
+            <h1 className="page-title" style={{ margin: 0 }}>Painel Geral {year}</h1>
+            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year + 1)} style={{ padding: '4px' }} title="Próximo Ano">
+              <ChevronRight />
+            </button>
+          </div>
+          <p className="page-subtitle" style={{ margin: 0 }}>Congregação Cristã no Brasil — Região de Iporã-PR</p>
         </div>
         <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Plus /> Novo Evento
