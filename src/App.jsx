@@ -15,6 +15,7 @@ const Icon = ({ d, size = 16, stroke = 'currentColor', fill = 'none', children }
 const HomeIcon = () => <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10" />;
 const CalendarIcon = () => <Icon d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM16 2v4M8 2v4M3 10h18" />;
 const ChevronLeft = () => <Icon d="M15 18l-6-6 6-6" />;
+const ChevronRight = () => <Icon d="M9 18l6-6-6-6" />;
 const Plus = () => <Icon d="M12 5v14M5 12h14" />;
 const Pencil = () => <Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />;
 const Trash = () => <Icon d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />;
@@ -583,7 +584,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack 
 }
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
-function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent }) {
+function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, year, onYearChange }) {
   let countEnsaios = 0;
   let countCultos = 0;
   let countMocidade = 0;
@@ -832,6 +833,7 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -850,7 +852,7 @@ export default function App() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllEvents(CURRENT_YEAR);
+      const data = await fetchAllEvents(selectedYear);
       setEvents(data);
     } catch (err) {
       setToast('Erro ao carregar dados: ' + err.message);
@@ -861,7 +863,7 @@ export default function App() {
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [selectedYear]);
 
   // Rola para o topo sempre que mudar o mês selecionado ou houver alteração na busca
   useEffect(() => {
@@ -1008,12 +1010,14 @@ export default function App() {
               events={events} 
               onSelectMonth={setSelectedMonth} 
               onResetSchedule={handleResetSchedule}
-              onCreateEvent={() => setModal({ mode: 'add', event: { month: new Date().getMonth() + 1, year: CURRENT_YEAR, event_date: new Date().toISOString().split('T')[0] } })}
+              onCreateEvent={() => setModal({ mode: 'add', event: { month: new Date().getMonth() + 1, year: selectedYear, event_date: `${selectedYear}-${String(new Date().getMonth() + 1).padStart(2,'0')}-01` } })}
+              year={selectedYear}
+              onYearChange={setSelectedYear}
             />
           ) : (
             <MonthEditor 
               month={selectedMonth} 
-              year={CURRENT_YEAR} 
+              year={selectedYear} 
               events={events.filter(e => {
                 if (e.month === selectedMonth) return true;
                 const isNextMonth = e.month === selectedMonth + 1 || (selectedMonth === 12 && e.month === 1);
