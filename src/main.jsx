@@ -40,6 +40,20 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        // Força a verificação de atualização do Service Worker ao carregar
+        reg.update();
+      })
+      .catch(() => {});
+  });
+
+  // Recarrega a página automaticamente quando o novo Service Worker assumir o controle (ativar e limpar o cache antigo)
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
 }

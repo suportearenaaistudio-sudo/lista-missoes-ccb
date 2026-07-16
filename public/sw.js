@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ccb-ipora-v1';
+const CACHE_NAME = 'ccb-ipora-v2';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -26,6 +26,26 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+
+  // Network-First para requisições de API (busca do banco de dados se online, senão usa o cache)
+  if (url.pathname.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) return response;
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache-First para arquivos estáticos (precache)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
