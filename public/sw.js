@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ccb-ipora-v2';
+const CACHE_NAME = 'ccb-ipora-v3';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -10,8 +10,9 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE))
   );
 });
 
@@ -28,8 +29,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Network-First para requisições de API (busca do banco de dados se online, senão usa o cache)
-  if (url.pathname.includes('/api/')) {
+  // Network-First para API e navegacao HTML (garante a versao nova sempre que estiver online)
+  if (url.pathname.includes('/api/') || event.request.mode === 'navigate' || url.pathname === '/index.html' || url.pathname === '/') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -45,7 +46,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-First para arquivos estáticos (precache)
+  // Cache-First para arquivos estaticos compilados (imagens/JS/CSS)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

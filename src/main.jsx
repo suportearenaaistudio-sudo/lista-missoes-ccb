@@ -42,13 +42,22 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((reg) => {
-        // Força a verificação de atualização do Service Worker ao carregar
         reg.update();
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Novo Service Worker ativado: recarrega a página para aplicar a nova versão instantaneamente
+                window.location.reload();
+              }
+            });
+          }
+        });
       })
       .catch(() => {});
   });
 
-  // Recarrega a página automaticamente quando o novo Service Worker assumir o controle (ativar e limpar o cache antigo)
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!refreshing) {
