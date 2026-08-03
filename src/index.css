@@ -1580,36 +1580,49 @@ body.dark .validation-warning-banner {
   
   /* Remove margens e fundos escuros do overlay no papel */
   .print-preview-overlay {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    position: static !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     background: white !important;
     padding: 0 !important;
     margin: 0 !important;
     overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  .print-pages-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
-  /* Ajusta o contêiner da página impressa */
+  /* Ajusta cada folha de página impressa com quebra de página automática */
   .print-page {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    position: relative !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
     margin: 0 !important;
-    padding: 12mm 15mm !important;
+    padding: 10mm 12mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     background: white !important;
     display: grid !important;
     grid-template-columns: 1fr 1fr 1fr !important;
     gap: 0 !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
   
   .print-column {
     border-right: 1px solid #000 !important;
+    padding: 0 3mm !important;
   }
   .print-column:last-child {
     border-right: none !important;

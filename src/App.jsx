@@ -289,8 +289,10 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 }
 
 // ─── Print Preview ────────────────────────────────────────────────────────────
+// ─── Print Preview ────────────────────────────────────────────────────────────
 function PrintPreview({ events, month, year, onClose }) {
   const monthName = MONTHS[month - 1];
+  const [copies, setCopies] = useState(1);
 
   const grouped = {};
   SECTION_ORDER.forEach(s => { grouped[s] = []; });
@@ -333,13 +335,56 @@ function PrintPreview({ events, month, year, onClose }) {
     </div>
   );
 
+  const pageCopies = Array.from({ length: Math.max(1, copies) });
+
   return (
     <div className="print-preview-overlay">
       <div className="print-preview-bar no-print">
-        <span>Visualização de Impressão — {monthName} {year}</span>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-blue" onClick={handlePrint}>
-            <Printer /> Imprimir (Ctrl+P)
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>Impressão — {monthName} {year}</span>
+          
+          {/* Seletor de Quantidade de Folhas */}
+          <div className="copies-selector" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#334155', padding: '4px 12px', borderRadius: '10px', border: '1px solid #475569' }}>
+            <span style={{ fontSize: '12.5px', color: '#cbd5e1', fontWeight: 600 }}>Quantidade de Folhas:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button 
+                type="button"
+                className="btn btn-ghost btn-sm" 
+                onClick={() => setCopies(c => Math.max(1, c - 1))}
+                style={{ color: '#fff', padding: '2px 8px', fontSize: '14px', fontWeight: 700, minWidth: '28px', background: '#1e293b' }}
+                title="Diminuir 1 folha"
+              >
+                -
+              </button>
+              <input 
+                type="number" 
+                min="1" 
+                max="50" 
+                value={copies} 
+                onChange={(e) => setCopies(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{ width: '48px', textAlign: 'center', background: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '6px', padding: '4px 0', fontSize: '13.5px', fontWeight: 700 }}
+              />
+              <button 
+                type="button"
+                className="btn btn-ghost btn-sm" 
+                onClick={() => setCopies(c => Math.min(50, c + 1))}
+                style={{ color: '#fff', padding: '2px 8px', fontSize: '14px', fontWeight: 700, minWidth: '28px', background: '#1e293b' }}
+                title="Aumentar 1 folha"
+              >
+                +
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+              <button type="button" className={`btn btn-sm ${copies === 5 ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setCopies(5)} style={{ fontSize: '11px', padding: '2px 6px', color: '#fff' }}>5x</button>
+              <button type="button" className={`btn btn-sm ${copies === 10 ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setCopies(10)} style={{ fontSize: '11px', padding: '2px 6px', color: '#fff' }}>10x</button>
+              <button type="button" className={`btn btn-sm ${copies === 15 ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setCopies(15)} style={{ fontSize: '11px', padding: '2px 6px', color: '#fff' }}>15x</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button className="btn btn-blue" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, padding: '8px 16px' }}>
+            <Printer /> Imprimir {copies} {copies === 1 ? 'Folha' : 'Folhas'}
           </button>
           <button className="btn btn-outline" style={{ color: 'white', borderColor: '#475569', background: '#334155' }} onClick={onClose}>
             <X /> Fechar
@@ -347,10 +392,14 @@ function PrintPreview({ events, month, year, onClose }) {
         </div>
       </div>
 
-      <div className="print-page">
-        <Col />
-        <Col />
-        <Col />
+      <div className="print-pages-container">
+        {pageCopies.map((_, index) => (
+          <div key={index} className="print-page">
+            <Col />
+            <Col />
+            <Col />
+          </div>
+        ))}
       </div>
     </div>
   );
