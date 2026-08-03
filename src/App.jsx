@@ -33,6 +33,7 @@ const BarChartIcon = ({ size = 16 }) => <Icon size={size} d="M18 20V10M12 20V4M6
 const CheckCircleIcon = ({ size = 16 }) => <Icon size={size} d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3" />;
 const SparklesIcon = ({ size = 16 }) => <Icon size={size} d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />;
 const MusicIcon = ({ size = 16 }) => <Icon size={size} d="M9 18V5l12-2v13M9 9l12-2" />;
+const ShareIcon = ({ size = 16 }) => <Icon size={size} d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-12 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98" />;
 const TextSizeIcon = ({ size = 16 }) => <Icon size={size} d="M4 7V4h16v3M9 4v16M15 4v16" />;
 const RotateCcwIcon = ({ size = 16 }) => <Icon size={size} d="M1 4v6h6M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />;
 
@@ -868,7 +869,7 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
 }
 
 // ─── Month Editor ─────────────────────────────────────────────────────────────
-function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true }) {
+function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true, onToast }) {
   const [modal, setModal] = useState(null);
   const [showPrint, setShowPrint] = useState(false);
   const [showCloneModal, setShowCloneModal] = useState(false);
@@ -877,6 +878,35 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [selectedDay, setSelectedDay] = useState(1);
+
+  const handleShareList = async () => {
+    const publicUrl = window.location.origin;
+    const shareData = {
+      title: `Lista de Missões — CCB Região de Iporã-PR`,
+      text: `Confira a Lista de Missões oficial da CCB na Região de Iporã-PR:`,
+      url: publicUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (_e) {
+        try {
+          await navigator.clipboard.writeText(publicUrl);
+          if (onToast) onToast('Link da Lista de Missões copiado com sucesso!');
+        } catch (_err) {
+          // fallback
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(publicUrl);
+        if (onToast) onToast('Link da Lista de Missões copiado com sucesso!');
+      } catch (_err) {
+        // fallback
+      }
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 1024);
@@ -1111,6 +1141,9 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
           <p className="page-subtitle">{events.length} evento{events.length !== 1 ? 's' : ''} cadastrado{events.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="btn-group">
+          <button className="btn btn-outline" onClick={handleShareList} title="Compartilhar link público da Lista de Missões">
+            <ShareIcon size={14} /> Compartilhar
+          </button>
           {isAdmin && (
             <button className="btn btn-outline" onClick={() => setShowCloneModal(true)} title="Copiar agenda de qualquer mês/ano">
               <DownloadIcon size={14} /> Clonar Agenda
@@ -1356,10 +1389,39 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
 }
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
-function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSelectMonth, onResetSchedule, onCreateEvent, year, onYearChange }) {
+function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSelectMonth, onResetSchedule, onCreateEvent, year, onYearChange, onToast }) {
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const handleShareList = async () => {
+    const publicUrl = window.location.origin;
+    const shareData = {
+      title: `Lista de Missões — CCB Região de Iporã-PR`,
+      text: `Confira a Lista de Missões oficial da CCB na Região de Iporã-PR (${year}):`,
+      url: publicUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (_e) {
+        try {
+          await navigator.clipboard.writeText(publicUrl);
+          if (onToast) onToast('Link da Lista de Missões copiado com sucesso!');
+        } catch (_err) {
+          // fallback
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(publicUrl);
+        if (onToast) onToast('Link da Lista de Missões copiado com sucesso!');
+      } catch (_err) {
+        // fallback
+      }
+    }
+  };
 
   let countEnsaios = 0;
   let countCultos = 0;
@@ -1505,6 +1567,20 @@ function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSel
 
             <button className="btn btn-outline" onClick={() => setShowCloneModal(true)} style={{ fontSize: '13px', fontWeight: 500, padding: '9px 14px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }} title="Clonar agenda de qualquer mês para outro mês">
               <DownloadIcon size={15} /> Clonar Agenda
+            </button>
+
+            <button className="btn btn-outline" onClick={handleShareList} style={{ 
+              fontSize: '13px', 
+              fontWeight: 600, 
+              padding: '9px 14px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              borderRadius: '10px',
+              color: 'var(--accent-blue)',
+              borderColor: 'rgba(59, 130, 246, 0.3)'
+            }} title="Compartilhar link público da Lista de Missões no WhatsApp ou redes">
+              <ShareIcon size={15} /> Compartilhar Lista
             </button>
           </div>
 
@@ -2302,6 +2378,7 @@ export default function App() {
                 onDelete={handleDelete}
                 onBack={() => {}}
                 isAdmin={false} // Read-only for public visitors
+                onToast={setToast}
               />
             </div>
           ) : searchTerm ? (
@@ -2326,6 +2403,7 @@ export default function App() {
               onCreateEvent={() => setModal({ mode: 'add', event: { month: new Date().getMonth() + 1, year: selectedYear, event_date: `${selectedYear}-${String(new Date().getMonth() + 1).padStart(2,'0')}-01` } })}
               year={selectedYear}
               onYearChange={setSelectedYear}
+              onToast={setToast}
             />
           ) : (
             <MonthEditor 
@@ -2342,6 +2420,7 @@ export default function App() {
               onDelete={handleDelete}
               onBack={() => setSelectedMonth(null)}
               isAdmin={true}
+              onToast={setToast}
             />
           )}
         </main>
