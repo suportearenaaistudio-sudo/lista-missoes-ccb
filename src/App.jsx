@@ -1936,33 +1936,7 @@ export default function App() {
   const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
   const nextYear = currentMonth === 12 ? currentYear + 1 : currentYear;
 
-  const [pwaPromptState, setPwaPromptState] = useState('hidden');
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  // Capture beforeinstallprompt event for Android native prompt
-  useEffect(() => {
-    const handleBeforeInstall = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-  }, []);
-
-  // Show banner on first load (if not admin and not already prompted)
-  useEffect(() => {
-    if (!isAdminMode) {
-      const isPrompted = localStorage.getItem('pwa_prompt_shown');
-      if (!isPrompted) {
-        const timer = setTimeout(() => {
-          setPwaPromptState('banner');
-        }, 2500);
-        return () => clearTimeout(timer);
-      }
-    } else {
-      setPwaPromptState('hidden');
-    }
-  }, [isAdminMode]);
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const isAdm = window.location.pathname.startsWith('/dev-admin');
@@ -2426,118 +2400,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* PWA Installation Prompt Overlay & Banner */}
-      {pwaPromptState !== 'hidden' && (
-        <div className={`pwa-prompt-container ${pwaPromptState === 'banner' ? 'banner-mode' : 'overlay-mode'}`}>
-          {pwaPromptState === 'banner' ? (
-            <div className="pwa-banner">
-              <div className="pwa-banner-content">
-                <img src="/logo.png" alt="Logo" className="pwa-banner-logo" />
-                <div style={{ textAlign: 'left' }}>
-                  <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>Deseja instalar o aplicativo em seu celular?</h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '11.5px', color: 'var(--text-secondary)' }}>Acesse rapidamente e até mesmo sem internet.</p>
-                </div>
-              </div>
-              <div className="pwa-banner-actions">
-                <button className="btn btn-outline btn-sm" onClick={() => {
-                  localStorage.setItem('pwa_prompt_shown', 'true');
-                  setPwaPromptState('hidden');
-                }}>Agora não</button>
-                <button className="btn btn-primary btn-sm" onClick={() => setPwaPromptState('select-os')}>Sim</button>
-              </div>
-            </div>
-          ) : (
-            <div className="pwa-overlay" onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                localStorage.setItem('pwa_prompt_shown', 'true');
-                setPwaPromptState('hidden');
-              }
-            }}>
-              <div className="pwa-overlay-card">
-                <button className="pwa-close-btn" onClick={() => {
-                  localStorage.setItem('pwa_prompt_shown', 'true');
-                  setPwaPromptState('hidden');
-                }}>✕</button>
 
-                {pwaPromptState === 'select-os' && (
-                  <div className="pwa-step-os">
-                    <img src="/logo.png" alt="Logo" className="pwa-overlay-logo" />
-                    <h2>Qual é o seu celular?</h2>
-                    <p>Selecione o sistema operacional do seu celular para ver o passo a passo:</p>
-                    <div className="pwa-os-buttons">
-                      <button className="btn btn-outline pwa-os-btn" onClick={() => setPwaPromptState('ios-steps')}>
-                        <span>📱 iPhone (iOS)</span>
-                      </button>
-                      <button className="btn btn-outline pwa-os-btn" onClick={async () => {
-                        if (deferredPrompt) {
-                          deferredPrompt.prompt();
-                          const { outcome } = await deferredPrompt.userChoice;
-                          if (outcome === 'accepted') {
-                            localStorage.setItem('pwa_prompt_shown', 'true');
-                            setPwaPromptState('hidden');
-                            setToast('Instalação iniciada!');
-                          } else {
-                            setPwaPromptState('android-steps');
-                          }
-                          setDeferredPrompt(null);
-                        } else {
-                          setPwaPromptState('android-steps');
-                        }
-                      }}>
-                        <span>🤖 Android</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {pwaPromptState === 'ios-steps' && (
-                  <div className="pwa-step-guide">
-                    <h2>Instalar no iPhone (iOS)</h2>
-                    <p className="pwa-guide-intro">Siga estes passos simples no navegador Safari:</p>
-                    <ol className="pwa-guide-list">
-                      <li>
-                        Toque no botão de <strong>Compartilhar</strong> (ícone de um quadrado com uma seta para cima na barra inferior do Safari).
-                      </li>
-                      <li>
-                        Role o menu de opções para baixo e selecione a opção <strong>Adicionar à Tela de Início</strong>.
-                      </li>
-                      <li>
-                        Toque em <strong>Adicionar</strong> no canto superior direito para confirmar.
-                      </li>
-                    </ol>
-                    <button className="btn btn-primary pwa-guide-ok-btn" onClick={() => {
-                      localStorage.setItem('pwa_prompt_shown', 'true');
-                      setPwaPromptState('hidden');
-                    }}>OK, concluir</button>
-                  </div>
-                )}
-
-                {pwaPromptState === 'android-steps' && (
-                  <div className="pwa-step-guide">
-                    <h2>Instalar no Android</h2>
-                    <p className="pwa-guide-intro">Siga estes passos simples no navegador Chrome:</p>
-                    <ol className="pwa-guide-list">
-                      <li>
-                        Toque nos <strong>três pontinhos</strong> (menu de opções) localizados no canto superior direito do Chrome.
-                      </li>
-                      <li>
-                        Selecione a opção <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.
-                      </li>
-                      <li>
-                        Confirme a operação tocando em <strong>Instalar</strong> ou <strong>Adicionar</strong>.
-                      </li>
-                    </ol>
-                    <button className="btn btn-primary pwa-guide-ok-btn" onClick={() => {
-                      localStorage.setItem('pwa_prompt_shown', 'true');
-                      setPwaPromptState('hidden');
-                    }}>OK, concluir</button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
 
