@@ -1382,7 +1382,7 @@ body.dark .validation-warning-banner {
 }
 
 .mobile-header {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 1024px) {
@@ -1396,22 +1396,23 @@ body.dark .validation-warning-banner {
   
   .mobile-header {
     display: flex !important;
-    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 10px 14px;
+    padding: 10px 16px;
     position: sticky;
     top: 0;
     z-index: 90;
-    gap: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    height: 58px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   body.dark .mobile-header {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 
-  .mobile-header-top {
+  .mobile-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1424,15 +1425,23 @@ body.dark .validation-warning-banner {
     gap: 10px;
   }
 
+  .app-brand-logo--mobile {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
   .mobile-brand-title {
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 800;
     color: var(--text-primary);
-    line-height: 1.2;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
   .mobile-brand-sub {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
     color: var(--accent-blue);
     text-transform: uppercase;
@@ -1445,49 +1454,14 @@ body.dark .validation-warning-banner {
     gap: 6px;
   }
 
-  .mobile-search-row {
-    position: relative;
-    width: 100%;
-  }
-
-  .mobile-search-input {
-    width: 100%;
-    padding: 7px 30px 7px 32px;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: var(--surface-hover);
+  .font-toggle-mobile-btn {
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 4px 8px;
     color: var(--text-primary);
-    font-size: 12.5px;
-    outline: none;
-    transition: all 0.2s ease;
-  }
-
-  .mobile-search-input:focus {
-    border-color: var(--accent-blue);
-    background: var(--surface);
-  }
-
-  .mobile-search-icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    pointer-events: none;
-  }
-
-  .mobile-search-clear {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 2px;
-    display: flex;
-    align-items: center;
+    background: var(--surface-hover);
+    border-radius: 12px;
+    border: 1px solid var(--border);
   }
   
   .main-body {

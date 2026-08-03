@@ -2136,23 +2136,6 @@ export default function App() {
                 <span className="app-brand-subtitle">CCB — Região de Iporã-PR</span>
               </div>
             </div>
-
-            <div className="header-search-wrapper no-print">
-              <span className="header-search-icon">
-                <SearchIcon size={15} />
-              </span>
-              <input 
-                type="text" 
-                placeholder="Buscar por cidade, tipo de evento ou data..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button className="search-clear-btn" onClick={() => setSearchTerm('')}>
-                  <X size={14} />
-                </button>
-              )}
-            </div>
           </div>
 
           <div className="header-right no-print">
@@ -2187,35 +2170,27 @@ export default function App() {
               {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
             </button>
             
-            {isAdminMode ? (
+            {isAdminMode && adminUser && (
               <div className="user-profile">
                 <div className="user-info">
-                  <span className="user-name">{adminUser?.name || 'Administrador'}</span>
+                  <span className="user-name">{adminUser.name || 'Administrador'}</span>
                   <span className="user-role-badge" onClick={handleLogout} title="Encerrar Sessão">
                     Sair (Logout)
                   </span>
                 </div>
-                {adminUser?.picture ? (
+                {adminUser.picture ? (
                   <img src={adminUser.picture} alt="Avatar" className="user-avatar" style={{ objectFit: 'cover' }} />
                 ) : (
                   <div className="user-avatar">ADM</div>
                 )}
               </div>
-            ) : (
-              <button 
-                className="btn btn-outline btn-sm admin-access-btn" 
-                onClick={() => navigateTo('/dev-admin')}
-                style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '20px' }}
-              >
-                Painel Admin
-              </button>
             )}
           </div>
         </header>
 
         {/* Header Mobile (Smartphones / Tablets) */}
         <header className="mobile-header">
-          <div className="mobile-header-top">
+          <div className="mobile-header-row">
             <div className="mobile-brand" onClick={() => navigateTo('/')} style={{ cursor: 'pointer' }}>
               <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
               <div>
@@ -2226,10 +2201,9 @@ export default function App() {
             
             <div className="mobile-header-actions">
               <button 
-                className="btn btn-ghost btn-sm btn-icon" 
+                className="btn btn-ghost btn-sm font-toggle-mobile-btn" 
                 onClick={() => setFontScale(s => s === 'normal' ? 'large' : s === 'large' ? 'xlarge' : 'normal')}
                 title="Ajustar tamanho da fonte"
-                style={{ padding: '6px', fontSize: '12px', fontWeight: 700 }}
               >
                 {fontScale === 'normal' ? 'A' : fontScale === 'large' ? 'A+' : 'A++'}
               </button>
@@ -2243,7 +2217,7 @@ export default function App() {
                 {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
               </button>
 
-              {isAdminMode ? (
+              {isAdminMode && adminUser && (
                 <button 
                   className="btn btn-ghost btn-sm" 
                   onClick={handleLogout} 
@@ -2251,33 +2225,8 @@ export default function App() {
                 >
                   Sair
                 </button>
-              ) : (
-                <button 
-                  className="btn btn-outline btn-sm" 
-                  onClick={() => navigateTo('/dev-admin')} 
-                  style={{ fontSize: '11px', padding: '4px 8px', fontWeight: 700, borderRadius: '12px' }}
-                >
-                  Admin
-                </button>
               )}
             </div>
-          </div>
-
-          {/* Campo de Busca Mobile */}
-          <div className="mobile-search-row">
-            <SearchIcon size={14} className="mobile-search-icon" />
-            <input 
-              type="text" 
-              placeholder="Buscar evento, cidade ou tipo..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mobile-search-input"
-            />
-            {searchTerm && (
-              <button className="mobile-search-clear" onClick={() => setSearchTerm('')}>
-                <X size={13} />
-              </button>
-            )}
           </div>
         </header>
   
