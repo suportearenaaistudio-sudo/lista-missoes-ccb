@@ -2126,85 +2126,158 @@ export default function App() {
   return (
     <div className="app">
       <div className="main-workspace">
+        {/* Header Desktop (Telas Grandes) */}
         <header className="workspace-header">
           <div className="header-left">
             <div className="app-brand no-print" style={{ cursor: 'pointer' }} onClick={() => navigateTo('/')}>
               <img src="/logo.png" alt="CCB" className="app-brand-logo" />
               <div className="app-brand-text">
                 <span className="app-brand-title">Lista de Missões</span>
-                <span className="app-brand-subtitle">CCB Iporã-PR</span>
+                <span className="app-brand-subtitle">CCB — Região de Iporã-PR</span>
               </div>
             </div>
-            {isAdminMode && (
-              <div className="header-search-wrapper no-print">
-                <span className="header-search-icon">
-                  <SearchIcon size={14} />
-                </span>
-                <input 
-                  type="text" 
-                  placeholder="Buscar evento..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            )}
+
+            <div className="header-search-wrapper no-print">
+              <span className="header-search-icon">
+                <SearchIcon size={15} />
+              </span>
+              <input 
+                type="text" 
+                placeholder="Buscar por cidade, tipo de evento ou data..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button className="search-clear-btn" onClick={() => setSearchTerm('')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
-  
+
           <div className="header-right no-print">
+            {/* Seletor Rápido de Tamanho de Fonte (Acessibilidade) */}
+            <div className="font-scale-header-toggle" title="Acessibilidade: Ajustar Tamanho do Texto">
+              <button 
+                className={`font-scale-btn ${fontScale === 'normal' ? 'active' : ''}`} 
+                onClick={() => setFontScale('normal')}
+              >
+                A
+              </button>
+              <button 
+                className={`font-scale-btn ${fontScale === 'large' ? 'active' : ''}`} 
+                onClick={() => setFontScale('large')}
+              >
+                A+
+              </button>
+              <button 
+                className={`font-scale-btn ${fontScale === 'xlarge' ? 'active' : ''}`} 
+                onClick={() => setFontScale('xlarge')}
+              >
+                A++
+              </button>
+            </div>
+
+            {/* Alternador Tema Escuro / Claro */}
             <button 
-              className="btn btn-ghost btn-sm btn-icon" 
+              className="btn btn-ghost btn-sm btn-icon theme-toggle-btn" 
               onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
               title={theme === 'light' ? 'Ativar Modo Escuro' : 'Ativar Modo Claro'}
             >
-              {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
+              {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
             </button>
             
             {isAdminMode ? (
               <div className="user-profile">
                 <div className="user-info">
-                  <span className="user-name">{adminUser.name || 'Administrador'}</span>
-                  <span className="user-role" style={{ color: 'var(--accent-red)', cursor: 'pointer', fontWeight: 600 }} onClick={handleLogout}>Sair (Logout)</span>
+                  <span className="user-name">{adminUser?.name || 'Administrador'}</span>
+                  <span className="user-role-badge" onClick={handleLogout} title="Encerrar Sessão">
+                    Sair (Logout)
+                  </span>
                 </div>
-                {adminUser.picture ? (
+                {adminUser?.picture ? (
                   <img src={adminUser.picture} alt="Avatar" className="user-avatar" style={{ objectFit: 'cover' }} />
                 ) : (
                   <div className="user-avatar">ADM</div>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <button 
+                className="btn btn-outline btn-sm admin-access-btn" 
+                onClick={() => navigateTo('/dev-admin')}
+                style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '20px' }}
+              >
+                Painel Admin
+              </button>
+            )}
           </div>
         </header>
-  
+
+        {/* Header Mobile (Smartphones / Tablets) */}
         <header className="mobile-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="mobile-header-top">
+            <div className="mobile-brand" onClick={() => navigateTo('/')} style={{ cursor: 'pointer' }}>
               <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>
-                  {searchTerm ? 'Busca' : selectedMonth ? activeMonthName : 'Lista de Missões'}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  CCB Iporã-PR
-                </div>
+              <div>
+                <div className="mobile-brand-title">Lista de Missões</div>
+                <div className="mobile-brand-sub">CCB Iporã-PR</div>
               </div>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="mobile-header-actions">
+              <button 
+                className="btn btn-ghost btn-sm btn-icon" 
+                onClick={() => setFontScale(s => s === 'normal' ? 'large' : s === 'large' ? 'xlarge' : 'normal')}
+                title="Ajustar tamanho da fonte"
+                style={{ padding: '6px', fontSize: '12px', fontWeight: 700 }}
+              >
+                {fontScale === 'normal' ? 'A' : fontScale === 'large' ? 'A+' : 'A++'}
+              </button>
+
               <button 
                 className="btn btn-ghost btn-sm btn-icon" 
                 onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
                 style={{ padding: '6px' }}
                 title="Alternar tema"
               >
-                {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
+                {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
               </button>
 
-              {isAdminMode && selectedMonth !== null && (
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
-                  Painel
+              {isAdminMode ? (
+                <button 
+                  className="btn btn-ghost btn-sm" 
+                  onClick={handleLogout} 
+                  style={{ fontSize: '11px', color: 'var(--accent-red)', padding: '4px 8px', fontWeight: 700 }}
+                >
+                  Sair
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-outline btn-sm" 
+                  onClick={() => navigateTo('/dev-admin')} 
+                  style={{ fontSize: '11px', padding: '4px 8px', fontWeight: 700, borderRadius: '12px' }}
+                >
+                  Admin
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Campo de Busca Mobile */}
+          <div className="mobile-search-row">
+            <SearchIcon size={14} className="mobile-search-icon" />
+            <input 
+              type="text" 
+              placeholder="Buscar evento, cidade ou tipo..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mobile-search-input"
+            />
+            {searchTerm && (
+              <button className="mobile-search-clear" onClick={() => setSearchTerm('')}>
+                <X size={13} />
+              </button>
+            )}
           </div>
         </header>
   
