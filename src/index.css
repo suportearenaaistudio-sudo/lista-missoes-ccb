@@ -1557,13 +1557,36 @@ body.dark .validation-warning-banner {
 /* ===== SCREEN PRINT ===== */
 @media print {
   @page {
-    margin: 0 !important;
+    margin: 8mm !important;
+    size: auto;
   }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { background: white !important; color: black !important; margin: 0 !important; }
-  body.dark { background: white !important; color: black !important; }
   
-  /* Oculta componentes da interface do sistema na impressão, eliminando-os do fluxo */
+  * { 
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important; 
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-preview-overlay,
+  .print-preview-overlay * {
+    visibility: visible;
+  }
+  
+  body, html { 
+    background: white !important; 
+    color: black !important; 
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+  
+  /* Oculta componentes da interface do sistema na impressão */
+  .no-print,
+  .workspace-header,
+  .mobile-header,
   .sidebar,
   .header,
   .month-actions,
@@ -1576,11 +1599,14 @@ body.dark .validation-warning-banner {
   .search-results-header,
   .print-preview-bar {
     display: none !important;
+    visibility: hidden !important;
   }
   
   /* Remove margens e fundos escuros do overlay no papel */
   .print-preview-overlay {
-    position: static !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
     height: auto !important;
     background: white !important;
@@ -1596,33 +1622,35 @@ body.dark .validation-warning-banner {
     padding: 0 !important;
   }
   
-  /* Ajusta cada folha de página impressa com quebra de página automática */
+  /* Ajusta cada folha de página impressa sem transbordar nem gerar página em branco extra */
   .print-page {
     position: relative !important;
     width: 100% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: auto !important;
+    min-height: 265mm !important;
     margin: 0 !important;
-    padding: 10mm 12mm !important;
+    padding: 4mm 6mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     background: white !important;
     display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
+    grid-template-columns: repeat(3, 1fr) !important;
     gap: 0 !important;
     box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     page-break-after: always !important;
     break-after: page !important;
   }
 
   .print-page:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
   
   .print-column {
     border-right: 1px solid #000 !important;
-    padding: 0 3mm !important;
+    padding: 0 4mm !important;
   }
   .print-column:last-child {
     border-right: none !important;
