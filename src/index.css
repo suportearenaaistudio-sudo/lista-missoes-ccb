@@ -1772,25 +1772,58 @@ body.dark .calendar-capture-legend {
   box-shadow: var(--shadow-sm);
 }
 
-/* ===== MOBILE CALENDAR (IPHONE STYLE) ===== */
-.calendar-grid-mobile {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+/* ===== MOBILE CALENDAR (IPHONE & ANDROID PERFECT GRID) ===== */
+.mobile-calendar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 10px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
+
+.calendar-weekday-header.mobile-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  background: var(--surface-hover);
+  border-radius: 8px;
+}
+
+.calendar-grid-mobile {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
 .calendar-cell.mobile-cell {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   aspect-ratio: 1 / 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer;
   position: relative;
-  padding: 0;
-  min-height: 44px;
+  padding: 0 !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.calendar-cell.mobile-cell.empty {
+  min-height: 42px !important;
+  height: 42px !important;
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
 }
 
 .calendar-cell.mobile-cell .calendar-day-num {
@@ -1800,26 +1833,28 @@ body.dark .calendar-capture-legend {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all var(--transition);
+  font-size: 13.5px;
+  font-weight: 600;
   color: var(--text-primary);
+  transition: all 0.15s ease;
 }
 
 .calendar-cell.mobile-cell.selected .calendar-day-num {
   background: var(--accent-red) !important;
-  color: white !important;
-  font-weight: 600;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
 }
 
 .calendar-cell.mobile-cell.today:not(.selected) .calendar-day-num {
-  color: var(--accent-red);
-  font-weight: 700;
+  color: var(--accent-blue);
+  font-weight: 800;
+  border: 1px solid var(--accent-blue);
 }
 
 .calendar-cell.mobile-cell.today.selected .calendar-day-num {
   background: var(--accent-red) !important;
-  color: white !important;
+  color: #ffffff !important;
 }
 
 .calendar-cell-dots {

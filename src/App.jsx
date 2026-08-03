@@ -1048,7 +1048,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     const cells = [];
 
     for (let i = 0; i < firstDayIndex; i++) {
-      cells.push(<div key={`empty-${i}`} className="calendar-cell empty" />);
+      cells.push(<div key={`empty-${i}`} className="calendar-cell mobile-cell empty" />);
     }
 
     for (let day = 1; day <= totalDays; day++) {
@@ -1080,9 +1080,9 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     }
 
     return (
-      <div>
+      <div className="mobile-calendar-card">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '8px' }}>
-          {weekdays.map(d => <div key={d} className="calendar-weekday-header">{d}</div>)}
+          {weekdays.map((d, index) => <div key={index} className="calendar-weekday-header mobile-weekday">{d}</div>)}
         </div>
         <div className="calendar-grid-mobile">
           {cells}
