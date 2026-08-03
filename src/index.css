@@ -1557,7 +1557,7 @@ body.dark .validation-warning-banner {
 /* ===== SCREEN PRINT ===== */
 @media print {
   @page {
-    margin: 0 !important;
+    margin: 5mm !important;
     size: A4 portrait;
   }
   
@@ -1580,8 +1580,8 @@ body.dark .validation-warning-banner {
     color: black !important; 
     margin: 0 !important;
     padding: 0 !important;
-    height: 100% !important;
-    overflow: hidden !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
   /* Oculta componentes da interface do sistema na impressão */
@@ -1627,10 +1627,10 @@ body.dark .validation-warning-banner {
   .print-page {
     position: relative !important;
     width: 100% !important;
-    height: 297mm !important;
-    max-height: 297mm !important;
-    margin: 0 !important;
-    padding: 8mm 10mm !important;
+    height: auto !important;
+    max-height: 270mm !important;
+    margin: 0 0 10mm 0 !important;
+    padding: 4mm 6mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     background: white !important;
@@ -1648,12 +1648,13 @@ body.dark .validation-warning-banner {
   .print-page:last-child {
     page-break-after: avoid !important;
     break-after: avoid !important;
+    margin-bottom: 0 !important;
   }
   
   .print-column {
     border-right: 1px solid #000 !important;
     padding: 0 4mm !important;
-    height: 100% !important;
+    height: auto !important;
     box-sizing: border-box !important;
   }
   .print-column:last-child {
