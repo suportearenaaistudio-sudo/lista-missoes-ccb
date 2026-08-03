@@ -49,20 +49,40 @@ export function formatDate(dateStr) {
   return `${d}/${m}/${y}`;
 }
 
+export function cleanLocalName(rawLocal) {
+  if (!rawLocal) return 'Iporã';
+  let cleaned = rawLocal.trim();
+
+  // Verifica se contém alguma das cidades oficiais da região
+  const known = LOCAIS.find(l => cleaned.toLowerCase().includes(l.toLowerCase()));
+  if (known) return known;
+
+  // Caso contrário, remove prefixos de tipos de evento que possam ter sido incluídos por engano
+  cleaned = cleaned
+    .replace(/^ensaio (parcial|local|regional)? (em|de)?\s*/i, '')
+    .replace(/^culto (unificado|de evangelização|de jovens)? (em)?\s*/i, '')
+    .replace(/^reunião de mocidade (em)?\s*/i, '')
+    .trim();
+
+  if (!cleaned) return 'Iporã';
+  return cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 // Build the text label for a printed event line
 export function buildEventLabel(ev) {
   const dateStr = formatDate(ev.event_date);
   const type = ev.event_type;
   const parcial = ev.is_parcial;
+  const local = cleanLocalName(ev.local);
 
   let label = dateStr + ' ';
 
   if (type === 'Ensaio' || type === 'Ensaio Regional') {
     if (type === 'Ensaio Regional') {
-      label += `Ensaio Regional em ${ev.local}`;
+      label += `Ensaio Regional em ${local}`;
     } else if (parcial) {
-      label += `Ensaio Parcial em ${ev.local}`;
-    } else if (ev.local === 'Iporã') {
+      label += `Ensaio Parcial em ${local}`;
+    } else if (local === 'Iporã') {
       // Diferencia meses ímpares (Ensaio Local) e meses pares (Ensaio de Iporã e Região)
       const cleanDateStr = ev.event_date.includes('T') ? ev.event_date.split('T')[0] : ev.event_date;
       const month = parseInt(cleanDateStr.split('-')[1]);
@@ -72,18 +92,14 @@ export function buildEventLabel(ev) {
         label += `Ensaio Local em Iporã`;
       }
     } else {
-      label += `Ensaio Local em ${ev.local}`;
+      label += `Ensaio Local em ${local}`;
     }
   } else {
     label += type;
-    if (ev.local) label += ` em ${ev.local}`;
+    if (local) label += ` em ${local}`;
   }
 
-  label += ` ${ev.time} h`;
-
-  if (ev.observation && ev.observation !== '__seeded__') {
-    label += ` - ${ev.observation}`;
-  }
+  label += ` às ${ev.time}`;
 
   return label;
 }

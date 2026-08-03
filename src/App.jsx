@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
-         formatDate, buildEventLabel, getSectionBadge, checkRuleViolations } from './constants';
+         formatDate, buildEventLabel, getSectionBadge, checkRuleViolations, cleanLocalName } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
  
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
@@ -27,6 +27,14 @@ const AlertIcon = () => <Icon d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 
 const SunIcon = () => <Icon d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z" />;
 const DownloadIcon = () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />;
 const MoonIcon = () => <Icon d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />;
+
+const ZapIcon = ({ size = 16 }) => <Icon size={size} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />;
+const BarChartIcon = ({ size = 16 }) => <Icon size={size} d="M18 20V10M12 20V4M6 20v-6" />;
+const CheckCircleIcon = ({ size = 16 }) => <Icon size={size} d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3" />;
+const SparklesIcon = ({ size = 16 }) => <Icon size={size} d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />;
+const MusicIcon = ({ size = 16 }) => <Icon size={size} d="M9 18V5l12-2v13M9 9l12-2" />;
+const TextSizeIcon = ({ size = 16 }) => <Icon size={size} d="M4 7V4h16v3M9 4v16M15 4v16" />;
+const RotateCcwIcon = ({ size = 16 }) => <Icon size={size} d="M1 4v6h6M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />;
 
 // Custom icons for stats
 const TotalEventsIcon = () => (
@@ -62,6 +70,67 @@ const MocidadeIcon = () => (
 function Toast({ message, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 2500); return () => clearTimeout(t); }, []);
   return <div className="toast"><span>✓</span> {message}</div>;
+}
+
+// ─── Custom Modal de Confirmação & Alerta ──────────────────────────────────────
+function ConfirmModal({ 
+  title = "Confirmação", 
+  message, 
+  confirmText = "Confirmar", 
+  cancelText = "Cancelar", 
+  isDanger = false,
+  onConfirm, 
+  onClose 
+}) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: '420px', textAlign: 'center', padding: '28px 24px' }}>
+        <div style={{ 
+          width: '52px', 
+          height: '52px', 
+          borderRadius: '50%', 
+          background: isDanger ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
+          color: isDanger ? 'var(--accent-red)' : 'var(--accent-blue)',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          margin: '0 auto 16px auto' 
+        }}>
+          {isDanger ? <AlertIcon size={26} /> : <ZapIcon size={26} />}
+        </div>
+
+        <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+          {title}
+        </h3>
+
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+          {message}
+        </p>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          {cancelText && (
+            <button className="btn btn-outline" onClick={onClose} style={{ flex: 1, padding: '10px 14px' }}>
+              {cancelText}
+            </button>
+          )}
+          <button 
+            className="btn" 
+            onClick={() => { if (onConfirm) onConfirm(); onClose(); }}
+            style={{ 
+              flex: 1, 
+              padding: '10px 14px',
+              background: isDanger ? 'var(--accent-red)' : 'var(--accent-blue)',
+              borderColor: isDanger ? 'var(--accent-red)' : 'var(--accent-blue)',
+              color: '#fff',
+              fontWeight: 600
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Event Modal ─────────────────────────────────────────────────────────────
@@ -286,12 +355,524 @@ function PrintPreview({ events, month, year, onClose }) {
   );
 }
 
+// ─── Modal para Clonar Agenda de Qualquer Mês para Qualquer Mês ───────────
+function CloneMonthModal({ defaultTargetMonth, targetYear, allEvents, onClose, onClone }) {
+  const [sourceMonth, setSourceMonth] = useState((defaultTargetMonth === 1 ? 12 : (defaultTargetMonth || 1) - 1) || 1);
+  const [sourceYear, setSourceYear] = useState(defaultTargetMonth === 1 ? targetYear - 1 : targetYear);
+  
+  const [targetMonth, setTargetMonth] = useState(defaultTargetMonth || 1);
+  const [targetYearVal, setTargetYearVal] = useState(targetYear);
+
+  const [cloning, setCloning] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const sourceEvents = allEvents.filter(e => e.month === sourceMonth && e.year === sourceYear);
+
+  const handleExecuteClone = async () => {
+    if (sourceEvents.length === 0) return;
+    setCloning(true);
+    try {
+      await onClone(sourceMonth, sourceYear, targetMonth, targetYearVal, sourceEvents);
+      onClose();
+    } catch (err) {
+      setConfirmDialog({
+        title: 'Erro ao Clonar',
+        message: err.message,
+        confirmText: 'OK',
+        cancelText: null,
+        isDanger: true
+      });
+    } finally {
+      setCloning(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: '480px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 className="modal-title" style={{ margin: 0 }}>Clonar Agenda entre Meses</h2>
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+          Escolha o mês de <strong>origem</strong> e o mês de <strong>destino</strong> para duplicar a agenda:
+        </p>
+
+        {/* Origem */}
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '14px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+            Copiar De (Origem):
+          </span>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '11px' }}>Mês</label>
+              <select className="form-select" value={sourceMonth} onChange={e => setSourceMonth(parseInt(e.target.value))}>
+                {MONTHS.map((m, idx) => (
+                  <option key={idx} value={idx + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '11px' }}>Ano</label>
+              <select className="form-select" value={sourceYear} onChange={e => setSourceYear(parseInt(e.target.value))}>
+                {[2025, 2026, 2027].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Destino */}
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+            Copiar Para (Destino):
+          </span>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '11px' }}>Mês</label>
+              <select className="form-select" value={targetMonth} onChange={e => setTargetMonth(parseInt(e.target.value))}>
+                {MONTHS.map((m, idx) => (
+                  <option key={idx} value={idx + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '11px' }}>Ano</label>
+              <select className="form-select" value={targetYearVal} onChange={e => setTargetYearVal(parseInt(e.target.value))}>
+                {[2025, 2026, 2027].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--surface-hover)', 
+          border: '1px solid var(--border)', 
+          borderRadius: '12px', 
+          padding: '14px', 
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          {sourceEvents.length > 0 ? (
+            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--accent-green)' }}>
+              ✓ {sourceEvents.length} evento{sourceEvents.length !== 1 ? 's' : ''} em {MONTHS[sourceMonth - 1]}/{sourceYear} → {MONTHS[targetMonth - 1]}/{targetYearVal}
+            </span>
+          ) : (
+            <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+              Nenhum evento encontrado em {MONTHS[sourceMonth - 1]} {sourceYear}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button className="btn btn-outline" onClick={onClose} disabled={cloning}>
+            Cancelar
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleExecuteClone} 
+            disabled={cloning || sourceEvents.length === 0}
+          >
+            {cloning ? 'Clonando...' : `Clonar para ${MONTHS[targetMonth - 1]}`}
+          </button>
+        </div>
+
+        {confirmDialog && (
+          <ConfirmModal
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            confirmText={confirmDialog.confirmText}
+            cancelText={confirmDialog.cancelText}
+            isDanger={confirmDialog.isDanger}
+            onConfirm={confirmDialog.onConfirm}
+            onClose={() => setConfirmDialog(null)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal de Automação de Agenda por Regras Recorrentes em Texto ────────────
+const DEFAULT_RULES_ARRAY = [
+  'Ensaio em Francisco Alves (1ª Sexta-feira do Mês)',
+  'Ensaio Parcial em Nova Santa Helena (2ª Sexta-feira dos Meses Ímpares)',
+  'Ensaio Parcial em Vila Nilza (3º Sábado dos Meses Pares)',
+  'Ensaio Local em Iporã (3ª Sexta-feira dos Meses Ímpares)',
+  'Ensaio de Região em Iporã (3ª Sexta-feira dos Meses Pares)',
+  'Ensaio Parcial em Cafezal do Sul (3ª Quinta-feira do Mês)',
+  'Ensaio Parcial em Guaiporã (Última Terça-feira do Mês)'
+];
+
+function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
+  const [ruleInput, setRuleInput] = useState('');
+  const [rulesList, setRulesList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('saved_schedule_rules_array');
+      return saved ? JSON.parse(saved) : DEFAULT_RULES_ARRAY;
+    } catch (_e) {
+      return DEFAULT_RULES_ARRAY;
+    }
+  });
+  const [clearExisting, setClearExisting] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const saveRulesToStorage = (newList) => {
+    setRulesList(newList);
+    localStorage.setItem('saved_schedule_rules_array', JSON.stringify(newList));
+  };
+
+  const handleAddRule = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = ruleInput.trim();
+    if (!trimmed) return;
+    const newList = [...rulesList, trimmed];
+    saveRulesToStorage(newList);
+    setRuleInput('');
+  };
+
+  const handleRemoveRule = (indexToRemove) => {
+    const newList = rulesList.filter((_, idx) => idx !== indexToRemove);
+    saveRulesToStorage(newList);
+  };
+
+  const handleResetToDefault = () => {
+    setConfirmDialog({
+      title: 'Restaurar Modelo Padrão?',
+      message: 'Deseja restaurar as 7 regras de modelo padrão da região de Iporã-PR?',
+      confirmText: 'Restaurar',
+      cancelText: 'Cancelar',
+      isDanger: false,
+      onConfirm: () => saveRulesToStorage(DEFAULT_RULES_ARRAY)
+    });
+  };
+
+  const calculateDateForRule = (yearVal, monthVal, freqKey) => {
+    const parts = freqKey.split('_');
+    const nthMap = { '1st': 1, '2nd': 2, '3rd': 3, '4th': 4, 'last': -1 };
+    const dayMap = { 'sun': 0, 'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6 };
+    
+    const nth = nthMap[parts[0]];
+    const weekday = dayMap[parts[1]];
+
+    if (nth === undefined || weekday === undefined) return null;
+
+    const daysInMonth = new Date(yearVal, monthVal, 0).getDate();
+    const matching = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(yearVal, monthVal - 1, d).getDay() === weekday) {
+        matching.push(d);
+      }
+    }
+    const day = nth === -1 ? matching[matching.length - 1] : matching[nth - 1];
+    if (!day) return null;
+    return `${yearVal}-${String(monthVal).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  const parseRuleToEvents = (line, yearVal) => {
+    const lower = line.toLowerCase().trim();
+    if (!lower) return [];
+
+    let type = 'Ensaio';
+    if (lower.includes('culto de jovens') || lower.includes('culto de jovem')) {
+      type = 'Culto de Jovens';
+    } else if (lower.includes('culto de evangelização') || lower.includes('culto de evangelizacao')) {
+      type = 'Culto de Evangelização';
+    } else if (lower.includes('culto unificado') || (lower.includes('culto') && !lower.includes('mocidade') && !lower.includes('jovens') && !lower.includes('jovem'))) {
+      type = 'Culto Unificado';
+    } else if (lower.includes('mocidade') || lower.includes('reunião de mocidade') || lower.includes('reuniao de mocidade')) {
+      type = 'Reunião de Mocidade';
+    } else if (lower.includes('regional')) {
+      type = 'Ensaio Regional';
+    }
+
+    const isParcial = lower.includes('parcial');
+
+    let time = '19:30';
+    if (type === 'Culto de Jovens' || type === 'Reunião de Mocidade' || lower.includes('jovens')) time = '19:00';
+    const timeMatch = lower.match(/(\d{1,2})[:h](\d{2})?/);
+    if (timeMatch) {
+      const hh = String(timeMatch[1]).padStart(2, '0');
+      const mm = timeMatch[2] || '00';
+      time = `${hh}:${mm}`;
+    }
+
+    let local = 'Iporã';
+    const foundLocal = LOCAIS.find(l => lower.includes(l.toLowerCase()));
+    if (foundLocal) {
+      local = foundLocal;
+    } else {
+      const emMatch = lower.match(/\bem ([a-zà-ú\s]+?)(?:\(|\d|$|às|nos|no)/);
+      if (emMatch && emMatch[1].trim()) {
+        local = cleanLocalName(emMatch[1].trim());
+      }
+    }
+
+    let weekday = 5; // default friday
+    if (lower.includes('domingo')) weekday = 0;
+    else if (lower.includes('segunda')) weekday = 1;
+    else if (lower.includes('terça') || lower.includes('terca')) weekday = 2;
+    else if (lower.includes('quarta')) weekday = 3;
+    else if (lower.includes('quinta')) weekday = 4;
+    else if (lower.includes('sexta')) weekday = 5;
+    else if (lower.includes('sábado') || lower.includes('sabado')) weekday = 6;
+
+    let nth = 1;
+    if (lower.includes('2º') || lower.includes('2ª') || lower.includes('segund') || lower.includes('2a') || lower.includes('2o')) nth = 2;
+    else if (lower.includes('3º') || lower.includes('3ª') || lower.includes('terceir') || lower.includes('3a') || lower.includes('3o')) nth = 3;
+    else if (lower.includes('4º') || lower.includes('4ª') || lower.includes('quart') || lower.includes('4a') || lower.includes('4o')) nth = 4;
+    else if (lower.includes('últim') || lower.includes('ultim')) nth = -1;
+    else if (lower.includes('todo') || lower.includes('cada')) nth = 0; // every matching weekday
+
+    let monthType = 'all';
+    if (/\bímpar(?:es)?\b|\bimpar(?:es)?\b/.test(lower)) {
+      monthType = 'odd';
+    } else if (/\bpar(?:es)?\b/.test(lower)) {
+      monthType = 'even';
+    }
+
+    const dayNames = ['sun','mon','tue','wed','thu','fri','sat'];
+    const generatedEvents = [];
+
+    for (let m = 1; m <= 12; m++) {
+      if (monthType === 'odd' && m % 2 === 0) continue;
+      if (monthType === 'even' && m % 2 !== 0) continue;
+
+      if (nth === 0) {
+        const daysInMonth = new Date(yearVal, m, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (new Date(yearVal, m - 1, d).getDay() === weekday) {
+            const eventDate = `${yearVal}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            generatedEvents.push({
+              event_date: eventDate,
+              time,
+              local,
+              event_type: type,
+              is_parcial: isParcial,
+              section: SECTIONS[type] || 'ENSAIOS MENSAIS',
+              observation: '',
+              month: m,
+              year: yearVal
+            });
+          }
+        }
+      } else {
+        const nthStr = nth === -1 ? 'last' : (nth === 1 ? '1st' : nth === 2 ? '2nd' : nth === 3 ? '3rd' : '4th');
+        const freqKey = `${nthStr}_${dayNames[weekday]}`;
+        const eventDate = calculateDateForRule(yearVal, m, freqKey);
+        if (eventDate) {
+          generatedEvents.push({
+            event_date: eventDate,
+            time,
+            local,
+            event_type: type,
+            is_parcial: isParcial,
+            section: SECTIONS[type] || 'ENSAIOS MENSAIS',
+            observation: '',
+            month: m,
+            year: yearVal
+          });
+        }
+      }
+    }
+    return generatedEvents;
+  };
+
+  const allParsedEvents = rulesList.flatMap(ruleText => parseRuleToEvents(ruleText, targetYear));
+
+  const handleExecuteGenerate = async () => {
+    if (allParsedEvents.length === 0) return;
+    setGenerating(true);
+    try {
+      await onGenerate(allParsedEvents, clearExisting);
+      onClose();
+    } catch (err) {
+      setConfirmDialog({
+        title: 'Erro ao Gerar Agenda',
+        message: err.message,
+        confirmText: 'Entendido',
+        cancelText: null,
+        isDanger: true
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: '640px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ZapIcon size={20} />
+            <h2 className="modal-title" style={{ margin: 0 }}>Gerador Automático por Regras ({targetYear})</h2>
+          </div>
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
+          Digite uma regra em português e pressione <strong>Enter</strong> (ou clique em Adicionar):
+        </p>
+
+        {/* Input de Adicionar Regra com Enter */}
+        <form onSubmit={handleAddRule} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <input 
+            type="text" 
+            className="form-input" 
+            value={ruleInput} 
+            onChange={e => setRuleInput(e.target.value)}
+            placeholder="Ex: Todo domingo às 10:00 tem culto de jovens em Iporã"
+            style={{ flex: 1, fontSize: '13px', padding: '10px 14px' }}
+            autoFocus
+          />
+          <button type="submit" className="btn btn-primary" style={{ fontSize: '13px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} /> Adicionar
+          </button>
+        </form>
+
+        {/* Cabeçalho da Lista de Regras */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Regras na Lista ({rulesList.length}):
+          </span>
+          <button className="btn btn-ghost btn-sm" onClick={handleResetToDefault} style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+            Restaurar Modelo Padrão
+          </button>
+        </div>
+
+        {/* Lista Visual de Regras */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '8px', 
+          maxHeight: '220px', 
+          overflowY: 'auto', 
+          marginBottom: '16px', 
+          paddingRight: '4px' 
+        }}>
+          {rulesList.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+              Nenhuma regra adicionada ainda. Digite uma regra acima e pressione Enter!
+            </div>
+          ) : (
+            rulesList.map((ruleText, idx) => {
+              const ruleEventsCount = parseRuleToEvents(ruleText, targetYear).length;
+              return (
+                <div key={idx} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justify: 'space-between', 
+                  background: 'var(--surface-hover)', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: '8px', 
+                  padding: '8px 12px',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                      {ruleText}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent-blue)', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 8px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+                      {ruleEventsCount} eventos
+                    </span>
+                    <button 
+                      className="btn btn-ghost btn-sm btn-icon" 
+                      onClick={() => handleRemoveRule(idx)} 
+                      style={{ color: 'var(--accent-red)', padding: '4px' }}
+                      title="Remover esta regra"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Opção de Substituição de Agenda */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '16px', userSelect: 'none' }}>
+          <input 
+            type="checkbox" 
+            checked={clearExisting} 
+            onChange={e => setClearExisting(e.target.checked)} 
+            style={{ width: '16px', height: '16px' }}
+          />
+          <span>Apagar eventos anteriores de {targetYear} antes de gerar os novos (Agenda Limpa)</span>
+        </label>
+
+        {/* Resumo do Cálculo ao Vivo */}
+        <div style={{ 
+          background: 'var(--surface-hover)', 
+          border: '1px solid var(--border)', 
+          borderRadius: '12px', 
+          padding: '14px', 
+          marginBottom: '20px',
+          display: 'flex',
+          justify: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BarChartIcon size={16} />
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Total: {allParsedEvents.length} eventos calculados para {targetYear}
+              </span>
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+              {rulesList.length} regra(s) ativa(s) na lista
+            </span>
+          </div>
+          {allParsedEvents.length > 0 && (
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-green)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircleIcon size={13} /> Pronto para criar
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button className="btn btn-outline" onClick={onClose} disabled={generating}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={handleExecuteGenerate} disabled={generating || allParsedEvents.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {generating ? 'Criando Eventos...' : <> <SparklesIcon size={15} /> Criar {allParsedEvents.length} Eventos em {targetYear} </>}
+          </button>
+        </div>
+
+        {confirmDialog && (
+          <ConfirmModal
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            confirmText={confirmDialog.confirmText}
+            cancelText={confirmDialog.cancelText}
+            isDanger={confirmDialog.isDanger}
+            onConfirm={confirmDialog.onConfirm}
+            onClose={() => setConfirmDialog(null)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Month Editor ─────────────────────────────────────────────────────────────
 function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true }) {
   const [modal, setModal] = useState(null);
   const [showPrint, setShowPrint] = useState(false);
+  const [showCloneModal, setShowCloneModal] = useState(false);
   const [viewTab, setViewTab] = useState('list');
-  const [copying, setCopying] = useState(false);
   const calendarRef = useRef(null);
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
@@ -312,22 +893,43 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     }
   }, [month, year]);
 
+  const [exportingImage, setExportingImage] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
   const handleDownloadImage = async () => {
-    if (!calendarRef.current) return;
+    if (!calendarRef.current) {
+      setConfirmDialog({
+        title: 'Aviso',
+        message: 'Aguarde um instante e tente novamente.',
+        confirmText: 'OK',
+        cancelText: null
+      });
+      return;
+    }
+    setExportingImage(true);
     try {
       const canvas = await html2canvas(calendarRef.current, {
         scale: 2,
         useCORS: true,
-        backgroundColor: document.body.className === 'dark' ? '#1e293b' : '#ffffff',
+        backgroundColor: '#ffffff',
+        logging: false
       });
       const image = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `calendario_${monthName.toLowerCase()}_2026.png`;
+      link.download = `agenda_ccb_${monthName.toLowerCase()}_${year}.png`;
       link.href = image;
       link.click();
     } catch (err) {
       console.error(err);
-      alert('Erro ao gerar imagem.');
+      setConfirmDialog({
+        title: 'Erro na Imagem',
+        message: 'Erro ao gerar imagem para WhatsApp: ' + err.message,
+        confirmText: 'OK',
+        cancelText: null,
+        isDanger: true
+      });
+    } finally {
+      setExportingImage(false);
     }
   };
 
@@ -345,39 +947,26 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     grouped[s].sort((a,b) => a.event_date.localeCompare(b.event_date));
   });
 
-  const handleCopyPreviousMonth = async () => {
-    const prevMonthEvents = allEvents.filter(e => e.month === month - 1);
-    if (prevMonthEvents.length === 0) {
-      alert('Nenhum evento encontrado no mês anterior para copiar.');
-      return;
-    }
-    if (!confirm(`Deseja copiar ${prevMonthEvents.length} eventos de ${MONTHS[month - 2]} para este mês?`)) return;
-
-    setCopying(true);
-    try {
-      const maxDays = new Date(year, month, 0).getDate();
-      for (const ev of prevMonthEvents) {
-        const [y, m, d] = ev.event_date.split('-');
-        const targetDay = Math.min(parseInt(d), maxDays);
-        const targetDate = `${year}-${String(month).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
-        
-        const section = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
-        await onSave({
-          event_date: targetDate,
-          time: ev.time,
-          local: ev.local,
-          event_type: ev.event_type,
-          is_parcial: ev.is_parcial,
-          observation: ev.observation === '__seeded__' ? '' : ev.observation,
-          section,
-          month,
-          year
-        });
-      }
-    } catch (err) {
-      alert('Erro ao copiar eventos: ' + err.message);
-    } finally {
-      setCopying(false);
+  const handleCloneFromAnyMonth = async (srcMonth, srcYear, srcEvents) => {
+    const maxDays = new Date(year, month, 0).getDate();
+    for (const ev of srcEvents) {
+      const cleanDate = ev.event_date.includes('T') ? ev.event_date.split('T')[0] : ev.event_date;
+      const d = cleanDate.split('-')[2];
+      const targetDay = Math.min(parseInt(d), maxDays);
+      const targetDate = `${year}-${String(month).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+      
+      const section = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
+      await onSave({
+        event_date: targetDate,
+        time: ev.time,
+        local: ev.local,
+        event_type: ev.event_type,
+        is_parcial: ev.is_parcial,
+        observation: ev.observation === '__seeded__' ? '' : ev.observation,
+        section,
+        month,
+        year
+      });
     }
   };
 
@@ -522,19 +1111,24 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
           <p className="page-subtitle">{events.length} evento{events.length !== 1 ? 's' : ''} cadastrado{events.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="btn-group">
-          {isAdmin && events.length === 0 && month > 1 && (
-            <button className="btn btn-outline" onClick={handleCopyPreviousMonth} disabled={copying}>
-              {copying ? 'Copiando...' : `Copiar de ${MONTHS[month - 2]}`}
+          {isAdmin && (
+            <button className="btn btn-outline" onClick={() => setShowCloneModal(true)} title="Copiar agenda de qualquer mês/ano">
+              <DownloadIcon size={14} /> Clonar Agenda
             </button>
           )}
           {isAdmin && (
-            <button className="btn btn-outline" onClick={() => setShowPrint(true)}>
-              <Printer /> Visualizar Impressão
+            <button className="btn btn-outline" onClick={handleDownloadImage} disabled={exportingImage} title="Baixar calendário formatado em imagem PNG para WhatsApp">
+              <DownloadIcon size={14} /> {exportingImage ? 'Gerando Imagem...' : 'Imagem WhatsApp'}
+            </button>
+          )}
+          {isAdmin && (
+            <button className="btn btn-outline" onClick={() => setShowPrint(true)} title="Gerar visualização e ata para impressão em PDF">
+              <Printer size={14} /> Impressão PDF
             </button>
           )}
           {isAdmin && (
             <button className="btn btn-primary" onClick={() => setModal({ mode: 'add', event: null })}>
-              <Plus /> Novo Evento
+              <Plus size={14} /> Novo Evento
             </button>
           )}
         </div>
@@ -554,33 +1148,13 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
       {viewTab === 'calendar' && events.length > 0 ? (
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
-            <button className="btn btn-outline" onClick={handleDownloadImage} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <DownloadIcon /> Baixar Calendário (Imagem)
+            <button className="btn btn-outline" onClick={handleDownloadImage} disabled={exportingImage} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DownloadIcon /> {exportingImage ? 'Gerando...' : 'Baixar Calendário (Imagem)'}
             </button>
           </div>
 
           <div className="mobile-calendar-container">
             {renderCalendarGrid()}
-          </div>
-
-          {/* Hidden/Off-screen container for high-res desktop landscape image downloads */}
-          <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
-            <div ref={calendarRef} className="calendar-capture-container" style={{ width: '1024px', minWidth: '1024px', background: 'var(--surface)', padding: '24px' }}>
-              <div className="calendar-capture-header" style={{ minWidth: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '16px' }}>
-                <div>
-                  <h2 className="calendar-capture-title" style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>{monthName} {year}</h2>
-                  <div className="calendar-capture-subtitle" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, marginTop: '4px' }}>CCB Região de Iporã-PR — Agenda Mensal</div>
-                </div>
-                <div className="calendar-capture-legend" style={{ display: 'flex', gap: '12px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
-                  <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
-                  <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
-                  <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
-                  <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
-                  <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
-                </div>
-              </div>
-              {renderDesktopCalendarGrid()}
-            </div>
           </div>
 
           {isMobile && (
@@ -727,6 +1301,16 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
         />
       )}
 
+      {showCloneModal && (
+        <CloneMonthModal
+          targetMonth={month}
+          targetYear={year}
+          allEvents={allEvents}
+          onClose={() => setShowCloneModal(false)}
+          onClone={handleCloneFromAnyMonth}
+        />
+      )}
+
       {showPrint && (
         <PrintPreview
           events={events}
@@ -735,12 +1319,48 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
           onClose={() => setShowPrint(false)}
         />
       )}
+
+      {/* Container invisível para geração de imagem HD (WhatsApp) independente da aba ativa */}
+      <div style={{ position: 'fixed', left: '-9999px', top: '0', pointerEvents: 'none', zIndex: -9999 }}>
+        <div ref={calendarRef} className="calendar-capture-container" style={{ width: '1024px', minWidth: '1024px', background: '#ffffff', color: '#0f172a', padding: '28px', borderRadius: '16px' }}>
+          <div className="calendar-capture-header" style={{ minWidth: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '16px' }}>
+            <div>
+              <h2 className="calendar-capture-title" style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: '#0f172a' }}>{monthName} {year}</h2>
+              <div className="calendar-capture-subtitle" style={{ fontSize: '14px', color: '#475569', fontWeight: 600, marginTop: '4px' }}>Congregação Cristã no Brasil — Região de Iporã-PR</div>
+            </div>
+            <div className="calendar-capture-legend" style={{ display: 'flex', gap: '12px', fontSize: '11px', fontWeight: 600, color: '#475569' }}>
+              <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
+              <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
+              <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
+              <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
+              <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
+            </div>
+          </div>
+          {renderDesktopCalendarGrid()}
+        </div>
+      </div>
+
+      {confirmDialog && (
+        <ConfirmModal
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          isDanger={confirmDialog.isDanger}
+          onConfirm={confirmDialog.onConfirm}
+          onClose={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Year Dashboard ────────────────────────────────────────────────────────────
-function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, year, onYearChange }) {
+function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSelectMonth, onResetSchedule, onCreateEvent, year, onYearChange }) {
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
   let countEnsaios = 0;
   let countCultos = 0;
   let countMocidade = 0;
@@ -768,26 +1388,156 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
     .filter(ev => ev.event_date >= todayStr)
     .slice(0, 5);
 
+  const handleCloneFromAnyMonth = async (srcMonth, srcYear, tgtMonth, tgtYear, srcEvents) => {
+    const maxDays = new Date(tgtYear, tgtMonth, 0).getDate();
+    for (const ev of srcEvents) {
+      const cleanDate = ev.event_date.includes('T') ? ev.event_date.split('T')[0] : ev.event_date;
+      const d = cleanDate.split('-')[2];
+      const targetDay = Math.min(parseInt(d), maxDays);
+      const targetDate = `${tgtYear}-${String(tgtMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+      
+      const section = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
+      await onSave({
+        event_date: targetDate,
+        time: ev.time,
+        local: ev.local,
+        event_type: ev.event_type,
+        is_parcial: ev.is_parcial,
+        observation: ev.observation === '__seeded__' ? '' : ev.observation,
+        section,
+        month: tgtMonth,
+        year: tgtYear
+      });
+    }
+  };
+
+  const handleAutoGenerateBatch = async (generatedList, clearExisting = true) => {
+    if (clearExisting && onClearYear) {
+      await onClearYear(year);
+    }
+    for (const ev of generatedList) {
+      await onSave(ev);
+    }
+  };
+
+  const handleClearYearEvents = () => {
+    setConfirmDialog({
+      title: `Apagar Agenda de ${year}?`,
+      message: `Tem certeza que deseja APAGAR TODOS os eventos da agenda de ${year}? Esta ação não poderá ser desfeita.`,
+      confirmText: `Sim, Apagar Agenda`,
+      cancelText: `Cancelar`,
+      isDanger: true,
+      onConfirm: () => {
+        if (onClearYear) onClearYear(year);
+      }
+    });
+  };
+
+  // Check for rule violations across all events
+  const ruleViolationsList = [];
+  const currentEventsList = allEvents || events;
+  currentEventsList.forEach(ev => {
+    const warnings = checkRuleViolations(ev, currentEventsList);
+    if (warnings.length > 0) {
+      ruleViolationsList.push({ event: ev, warnings });
+    }
+  });
+
+  const totalEventsCount = events.length || 1;
+  const pctEnsaios = Math.round((countEnsaios / totalEventsCount) * 100);
+  const pctCultos = Math.round((countCultos / totalEventsCount) * 100);
+  const pctMocidade = Math.round((countMocidade / totalEventsCount) * 100);
+
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Cabeçalho de Ações Principais do Painel */}
+      <div className="admin-page-header" style={{ 
+        display: 'flex', 
+        justify: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '24px', 
+        flexWrap: 'wrap', 
+        gap: '16px',
+        background: 'var(--surface)',
+        padding: '18px 24px',
+        borderRadius: '16px',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year - 1)} style={{ padding: '4px' }} title="Ano Anterior">
-              <ChevronLeft />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year - 1)} style={{ padding: '6px' }} title="Ano Anterior">
+              <ChevronLeft size={18} />
             </button>
-            <h1 className="page-title" style={{ margin: 0 }}>Painel Geral {year}</h1>
-            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year + 1)} style={{ padding: '4px' }} title="Próximo Ano">
-              <ChevronRight />
+            <h1 className="page-title" style={{ margin: 0, fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              Painel Geral {year}
+            </h1>
+            <button className="btn btn-ghost btn-sm btn-icon no-print" onClick={() => onYearChange(year + 1)} style={{ padding: '6px' }} title="Próximo Ano">
+              <ChevronRight size={18} />
             </button>
           </div>
-          <p className="page-subtitle" style={{ margin: 0 }}>Congregação Cristã no Brasil — Região de Iporã-PR</p>
+          <p className="page-subtitle" style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Congregação Cristã no Brasil — Região de Iporã-PR
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Plus /> Novo Evento
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* Grupo de Ações de Criação e Automação */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="btn btn-primary" onClick={onCreateEvent} style={{ fontSize: '13px', fontWeight: 600, padding: '9px 16px', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '10px' }}>
+              <Plus size={16} /> Novo Evento
+            </button>
+
+            <button className="btn" onClick={() => setShowAutoScheduleModal(true)} style={{ 
+              fontSize: '13px', 
+              fontWeight: 600, 
+              padding: '9px 14px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              borderRadius: '10px',
+              background: 'rgba(59, 130, 246, 0.08)',
+              color: 'var(--accent-blue)',
+              border: '1px solid rgba(59, 130, 246, 0.2)'
+            }} title="Gerar agenda do ano todo automaticamente por regras recorrentes">
+              <ZapIcon size={15} /> Gerar por Regras
+            </button>
+
+            <button className="btn btn-outline" onClick={() => setShowCloneModal(true)} style={{ fontSize: '13px', fontWeight: 500, padding: '9px 14px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }} title="Clonar agenda de qualquer mês para outro mês">
+              <DownloadIcon size={15} /> Clonar Agenda
+            </button>
+          </div>
+
+          {/* Divisor de Grupo de Ações */}
+          <div style={{ width: '1px', height: '28px', background: 'var(--border)', margin: '0 2px' }} />
+
+          {/* Grupo de Manutenção da Agenda */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {year === 2026 && (
+              <button className="btn btn-outline" onClick={onResetSchedule} style={{ fontSize: '12.5px', fontWeight: 500, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }} title="Restaurar a agenda oficial original de 60 eventos de 2026">
+                <RotateCcwIcon size={14} /> Restaurar 2026
+              </button>
+            )}
+
+            <button className="btn btn-outline" onClick={handleClearYearEvents} style={{ 
+              fontSize: '12.5px', 
+              fontWeight: 500, 
+              padding: '9px 12px', 
+              color: 'var(--accent-red)', 
+              borderColor: 'rgba(239, 68, 68, 0.25)', 
+              background: 'rgba(239, 68, 68, 0.04)',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              borderRadius: '10px' 
+            }} title="Apagar todos os eventos do ano selecionado">
+              <Trash size={14} /> Limpar {year}
+            </button>
+          </div>
+        </div>
       </div>
 
+      {/* Cartões de Métricas KPIs */}
       <div className="dashboard-stats">
         <div className="stat-card">
           <div className="stat-info">
@@ -802,7 +1552,7 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
         <div className="stat-card">
           <div className="stat-info">
             <span className="stat-value">{countEnsaios}</span>
-            <span className="stat-label">Ensaios</span>
+            <span className="stat-label">Ensaios ({pctEnsaios}%)</span>
           </div>
           <div className="stat-icon amber">
             <EnsaioIcon />
@@ -812,7 +1562,7 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
         <div className="stat-card">
           <div className="stat-info">
             <span className="stat-value">{countCultos}</span>
-            <span className="stat-label">Cultos</span>
+            <span className="stat-label">Cultos ({pctCultos}%)</span>
           </div>
           <div className="stat-icon green">
             <CultoIcon />
@@ -822,11 +1572,81 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
         <div className="stat-card">
           <div className="stat-info">
             <span className="stat-value">{countMocidade}</span>
-            <span className="stat-label">Mocidade</span>
+            <span className="stat-label">Mocidade ({pctMocidade}%)</span>
           </div>
           <div className="stat-icon purple">
             <MocidadeIcon />
           </div>
+        </div>
+      </div>
+
+      {/* Seção de KPIs e Alertas de Conformidade */}
+      <div className="kpi-section">
+        {events.length > 0 && (
+          <div className="kpi-distribution-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MusicIcon size={16} />
+                <span className="kpi-health-title">Distribuição de Eventos por Tipo ({year})</span>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {events.length} evento{events.length !== 1 ? 's' : ''} no total
+              </span>
+            </div>
+
+            <div className="kpi-distribution-bar">
+              <div className="kpi-segment ensaios" style={{ width: `${pctEnsaios}%` }} title={`Ensaios: ${pctEnsaios}%`} />
+              <div className="kpi-segment cultos" style={{ width: `${pctCultos}%` }} title={`Cultos: ${pctCultos}%`} />
+              <div className="kpi-segment mocidade" style={{ width: `${pctMocidade}%` }} title={`Mocidade: ${pctMocidade}%`} />
+            </div>
+
+            <div className="kpi-legend">
+              <div className="kpi-legend-item">
+                <span className="kpi-legend-dot" style={{ background: 'var(--accent-amber)' }} />
+                <span>Ensaios ({countEnsaios} - {pctEnsaios}%)</span>
+              </div>
+              <div className="kpi-legend-item">
+                <span className="kpi-legend-dot" style={{ background: 'var(--accent-green)' }} />
+                <span>Cultos ({countCultos} - {pctCultos}%)</span>
+              </div>
+              <div className="kpi-legend-item">
+                <span className="kpi-legend-dot" style={{ background: 'var(--accent-purple)' }} />
+                <span>Mocidade ({countMocidade} - {pctMocidade}%)</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Alertas Automáticos de Conflitos e Regras da Igreja */}
+        <div className={`kpi-health-card ${ruleViolationsList.length > 0 ? 'has-warnings' : 'clean'}`}>
+          <div className="kpi-health-header">
+            {ruleViolationsList.length > 0 ? <AlertIcon size={18} /> : <CheckCircleIcon size={18} />}
+            <span className="kpi-health-title">
+              {ruleViolationsList.length > 0 
+                ? `Alertas de Conformidade e Conflitos (${ruleViolationsList.length} ${ruleViolationsList.length === 1 ? 'alerta detectado' : 'alertas detectados'})` 
+                : 'Conformidade Geral da Agenda'}
+            </span>
+          </div>
+
+          {ruleViolationsList.length > 0 ? (
+            <div className="kpi-health-list">
+              {ruleViolationsList.map(({ event, warnings }, idx) => (
+                <div key={idx} className="kpi-health-item">
+                  <div>
+                    <strong>{formatDate(event.event_date)} em {event.local} ({event.event_type}):</strong>{' '}
+                    <span style={{ color: 'var(--accent-red)' }}>{warnings.join(', ')}</span>
+                  </div>
+                  <button className="btn btn-outline btn-sm" onClick={() => onSelectMonth(event.month)} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                    Ver em {MONTHS[event.month - 1]}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Todos os eventos cadastrados atendem perfeitamente às regras de rodízio e horários sem conflitos.
+            </p>
+          )}
         </div>
       </div>
 
@@ -888,6 +1708,37 @@ function YearDashboard({ events, onSelectMonth, onResetSchedule, onCreateEvent, 
           );
         })}
       </div>
+
+      {showCloneModal && (
+        <CloneMonthModal
+          defaultTargetMonth={1}
+          targetYear={year}
+          allEvents={allEvents || events}
+          onClose={() => setShowCloneModal(false)}
+          onClone={handleCloneFromAnyMonth}
+        />
+      )}
+
+      {showAutoScheduleModal && (
+        <AutoScheduleModal
+          targetYear={year}
+          allEvents={allEvents || events}
+          onClose={() => setShowAutoScheduleModal(false)}
+          onGenerate={handleAutoGenerateBatch}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmModal
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          isDanger={confirmDialog.isDanger}
+          onConfirm={confirmDialog.onConfirm}
+          onClose={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }
@@ -996,7 +1847,7 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
 
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [isAdminMode, setIsAdminMode] = useState(window.location.pathname.startsWith('/adm'));
+  const [isAdminMode, setIsAdminMode] = useState(window.location.pathname.startsWith('/dev-admin'));
   const [adminUser, setAdminUser] = useState(() => {
     const cached = localStorage.getItem('admin_user');
     return cached ? JSON.parse(cached) : null;
@@ -1038,7 +1889,7 @@ export default function App() {
   }, [isAdminMode]);
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    const isAdm = window.location.pathname.startsWith('/adm');
+    const isAdm = window.location.pathname.startsWith('/dev-admin');
     return isAdm ? null : (new Date().getMonth() + 1);
   });
   const [selectedYear, setSelectedYear] = useState(() => {
@@ -1054,20 +1905,26 @@ export default function App() {
     return localStorage.getItem('theme') || 'light';
   });
 
+  const [fontScale, setFontScale] = useState(() => {
+    return localStorage.getItem('accessibility_font_scale') || 'normal';
+  });
+
   useEffect(() => {
     document.body.className = theme === 'dark' ? 'dark' : '';
+    if (fontScale === 'large') document.body.classList.add('font-scale-lg');
+    if (fontScale === 'xlarge') document.body.classList.add('font-scale-xl');
     localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, fontScale]);
 
   // Handle simple client-side routing
   const navigateTo = (path) => {
     window.history.pushState({}, '', path);
-    setIsAdminMode(path.startsWith('/adm'));
+    setIsAdminMode(path.startsWith('/dev-admin'));
   };
 
   useEffect(() => {
     const handlePop = () => {
-      setIsAdminMode(window.location.pathname.startsWith('/adm'));
+      setIsAdminMode(window.location.pathname.startsWith('/dev-admin'));
     };
     window.addEventListener('popstate', handlePop);
     return () => window.removeEventListener('popstate', handlePop);
@@ -1136,30 +1993,61 @@ export default function App() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Excluir Evento?',
+      message: 'Tem certeza que deseja excluir este evento da agenda?',
+      confirmText: 'Sim, Excluir',
+      cancelText: 'Cancelar',
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteEvent(id);
+          setEvents(prev => prev.filter(e => e.id !== id));
+          setToast('Evento excluído com sucesso!');
+        } catch (err) {
+          setToast('Erro: ' + err.message);
+        }
+      }
+    });
+  };
+
+  const handleClearYear = async (targetYear) => {
     try {
-      await deleteEvent(id);
-      setEvents(prev => prev.filter(e => e.id !== id));
-      setToast('Evento excluído com sucesso!');
+      const toDelete = events.filter(e => e.year === targetYear);
+      for (const ev of toDelete) {
+        await deleteEvent(ev.id);
+      }
+      setEvents(prev => prev.filter(e => e.year !== targetYear));
+      setToast(`Agenda de ${targetYear} limpa com sucesso!`);
     } catch (err) {
-      setToast('Erro: ' + err.message);
+      setToast('Erro ao limpar agenda: ' + err.message);
     }
   };
 
-  const handleResetSchedule = async () => {
-    if (!confirm('Esta ação redefinirá a agenda padrão regional de 2026. Deseja prosseguir?')) return;
-    setLoading(true);
-    try {
-      await runSetup();
-      const data = await fetchAllEvents(CURRENT_YEAR);
-      setEvents(data);
-      setToast('Calendário padrão restaurado!');
-    } catch (err) {
-      setToast('Erro ao restaurar: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleResetSchedule = () => {
+    setConfirmDialog({
+      title: 'Redefinir Agenda 2026?',
+      message: 'Esta ação redefinirá a agenda padrão regional de 2026 com os 60 eventos oficiais. Deseja prosseguir?',
+      confirmText: 'Redefinir',
+      cancelText: 'Cancelar',
+      isDanger: true,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await runSetup();
+          const data = await fetchAllEvents(CURRENT_YEAR);
+          setEvents(data);
+          setToast('Calendário padrão restaurado!');
+        } catch (err) {
+          setToast('Erro ao restaurar: ' + err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleEmailLogin = (e) => {
@@ -1289,7 +2177,7 @@ export default function App() {
   
         <header className="mobile-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontWeight: 600, fontSize: '13px' }}>
@@ -1299,16 +2187,18 @@ export default function App() {
                   CCB Iporã-PR
                 </div>
               </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button 
                 className="btn btn-ghost btn-sm btn-icon" 
                 onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-                style={{ padding: '4px', marginLeft: '4px' }}
+                style={{ padding: '6px' }}
+                title="Alternar tema"
               >
-                {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
+                {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
               </button>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '6px' }}>
+
               {isAdminMode && selectedMonth !== null && (
                 <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMonth(null)} style={{ fontSize: '11px' }}>
                   Painel
@@ -1326,25 +2216,53 @@ export default function App() {
           ) : !isAdminMode ? (
             /* Public View: Only shows events of current month and next month with monthly switcher */
             <div>
-              <div className="public-welcome-header" style={{ marginBottom: '24px' }}>
+              <div className="public-welcome-header" style={{ marginBottom: '16px' }}>
                 <h1 className="page-title">Lista de Missões</h1>
                 <p className="page-subtitle">Exibindo eventos oficiais da Congregação Cristã no Brasil para a região de Iporã-PR.</p>
               </div>
 
-              <div className="public-month-tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              {/* Seletor Integrado de Tamanho de Texto */}
+              <div className="senior-font-bar">
+                <span className="senior-font-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TextSizeIcon size={15} /> Tamanho da Letra:
+                </span>
+                <div className="senior-font-segmented">
+                  <button 
+                    className={`senior-font-btn ${fontScale === 'normal' ? 'active' : ''}`}
+                    onClick={() => setFontScale('normal')}
+                  >
+                    A <small style={{ fontWeight: 400, opacity: 0.8 }}>(Normal)</small>
+                  </button>
+                  <button 
+                    className={`senior-font-btn ${fontScale === 'large' ? 'active' : ''}`}
+                    onClick={() => setFontScale('large')}
+                  >
+                    A+ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Grande)</small>
+                  </button>
+                  <button 
+                    className={`senior-font-btn ${fontScale === 'xlarge' ? 'active' : ''}`}
+                    onClick={() => setFontScale('xlarge')}
+                  >
+                    A++ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Extra)</small>
+                  </button>
+                </div>
+              </div>
+
+              {/* Seleção de Mês com Cartões Destacados */}
+              <div className="senior-month-tabs">
                 <button 
-                  className={`view-tab ${selectedMonth === currentMonth ? 'active' : ''}`}
+                  className={`senior-month-btn ${selectedMonth === currentMonth ? 'active' : ''}`}
                   onClick={() => { setSelectedMonth(currentMonth); setSelectedYear(currentYear); }}
-                  style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 600 }}
                 >
-                  {MONTHS[currentMonth - 1]} {currentYear}
+                  <span className="month-title">{MONTHS[currentMonth - 1]} {currentYear}</span>
+                  <span className="month-badge">Mês Atual</span>
                 </button>
                 <button 
-                  className={`view-tab ${selectedMonth === nextMonth ? 'active' : ''}`}
+                  className={`senior-month-btn ${selectedMonth === nextMonth ? 'active' : ''}`}
                   onClick={() => { setSelectedMonth(nextMonth); setSelectedYear(nextYear); }}
-                  style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 600 }}
                 >
-                  {MONTHS[nextMonth - 1]} {nextYear}
+                  <span className="month-title">{MONTHS[nextMonth - 1]} {nextYear}</span>
+                  <span className="month-badge">Próximo Mês</span>
                 </button>
               </div>
 
@@ -1377,6 +2295,10 @@ export default function App() {
           ) : selectedMonth === null ? (
             <YearDashboard 
               events={events} 
+              allEvents={events}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onClearYear={handleClearYear}
               onSelectMonth={setSelectedMonth} 
               onResetSchedule={handleResetSchedule}
               onCreateEvent={() => setModal({ mode: 'add', event: { month: new Date().getMonth() + 1, year: selectedYear, event_date: `${selectedYear}-${String(new Date().getMonth() + 1).padStart(2,'0')}-01` } })}
@@ -1517,6 +2439,18 @@ export default function App() {
       )}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+
+      {confirmDialog && (
+        <ConfirmModal
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          isDanger={confirmDialog.isDanger}
+          onConfirm={confirmDialog.onConfirm}
+          onClose={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }
