@@ -18,6 +18,51 @@ export const LOCAIS = [
   'Guaiporã',
 ];
 
+const CUSTOM_LOCAIS_KEY = 'custom_locais_regiao';
+
+function normalizeLocalName(name) {
+  return (name || '').trim().replace(/\s+/g, ' ');
+}
+
+export function loadCustomLocais() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CUSTOM_LOCAIS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.map(normalizeLocalName).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomLocal(name) {
+  const cleaned = normalizeLocalName(name);
+  if (!cleaned) return null;
+
+  const existsInDefault = LOCAIS.some(l => l.toLowerCase() === cleaned.toLowerCase());
+  const custom = loadCustomLocais();
+  const existsInCustom = custom.some(l => l.toLowerCase() === cleaned.toLowerCase());
+
+  if (!existsInDefault && !existsInCustom && typeof localStorage !== 'undefined') {
+    localStorage.setItem(CUSTOM_LOCAIS_KEY, JSON.stringify([...custom, cleaned]));
+  }
+
+  // Mantém a capitalização já cadastrada, se houver
+  const known = [...LOCAIS, ...custom].find(l => l.toLowerCase() === cleaned.toLowerCase());
+  return known || cleaned;
+}
+
+export function getMergedLocais(eventLocals = []) {
+  const merged = new Map();
+  [...LOCAIS, ...loadCustomLocais(), ...eventLocals]
+    .map(normalizeLocalName)
+    .filter(Boolean)
+    .forEach(local => {
+      const key = local.toLowerCase();
+      if (!merged.has(key)) merged.set(key, local);
+    });
+  return Array.from(merged.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
 export const SECTIONS = {
   'Ensaio': 'ENSAIOS MENSAIS',
   'Ensaio Técnico': 'ENSAIOS TÉCNICOS',
@@ -55,8 +100,9 @@ export function cleanLocalName(rawLocal) {
   if (!rawLocal) return 'Iporã';
   let cleaned = rawLocal.trim();
 
-  // Verifica se contém alguma das cidades oficiais da região
-  const known = LOCAIS.find(l => cleaned.toLowerCase().includes(l.toLowerCase()));
+  // Verifica se contém alguma das cidades oficiais da região (padrão + cadastradas)
+  const knownList = getMergedLocais();
+  const known = knownList.find(l => cleaned.toLowerCase().includes(l.toLowerCase()));
   if (known) return known;
 
   // Caso contrário, remove prefixos de tipos de evento que possam ter sido incluídos por engano

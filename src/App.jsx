@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
-         formatDate, buildEventLabel, buildEventDescription, getSectionBadge, getBadgeLabel, checkRuleViolations, cleanLocalName } from './constants';
+         formatDate, buildEventLabel, buildEventDescription, getSectionBadge, getBadgeLabel,
+         checkRuleViolations, cleanLocalName, getMergedLocais, saveCustomLocal } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
  
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
@@ -143,10 +144,13 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
     ? (event.event_date.includes('T') ? event.event_date.split('T')[0] : event.event_date) 
     : defaultDate;
 
+  const initialLocais = getMergedLocais((allEvents || []).map(e => e.local));
+  const defaultLocal = event?.local || initialLocais.find(l => l === 'Iporã') || initialLocais[0] || LOCAIS[2];
+
   const [form, setForm] = useState({
     event_date: cleanEventDate,
     time: event?.time || '19:30',
-    local: event?.local || LOCAIS[2],
+    local: defaultLocal,
     event_type: event?.event_type || 'Ensaio',
     is_parcial: event?.is_parcial ?? false,
     show_in_prev_month: event?.show_in_prev_month ?? false,
@@ -154,8 +158,25 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
   });
 
   const [saving, setSaving] = useState(false);
+  const [locais, setLocais] = useState(initialLocais);
+  const [addingLocal, setAddingLocal] = useState(false);
+  const [newLocal, setNewLocal] = useState('');
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const refreshLocais = (selected) => {
+    const next = getMergedLocais([...(allEvents || []).map(e => e.local), selected].filter(Boolean));
+    setLocais(next);
+  };
+
+  const handleAddLocal = () => {
+    const saved = saveCustomLocal(newLocal);
+    if (!saved) return;
+    refreshLocais(saved);
+    set('local', saved);
+    setAddingLocal(false);
+    setNewLocal('');
+  };
 
   const currentEventObject = {
     id: event?.id,
@@ -172,15 +193,17 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
     e.preventDefault();
     setSaving(true);
     try {
+      const localName = saveCustomLocal(form.local) || form.local;
       const section = SECTIONS[form.event_type] || 'ENSAIOS MENSAIS';
-      const [y, m, d] = form.event_date.split('-');
+      const [y, m] = form.event_date.split('-');
       const eventMonth = parseInt(m);
       const eventYear = parseInt(y);
+      const payload = { ...form, local: localName, section, month: eventMonth, year: eventYear };
 
       if (isEdit) {
-        await onSave({ ...form, id: event.id, section, month: eventMonth, year: eventYear });
+        await onSave({ ...payload, id: event.id });
       } else {
-        await onSave({ ...form, section, month: eventMonth, year: eventYear });
+        await onSave(payload);
       }
       onClose();
     } catch (err) {
@@ -232,10 +255,44 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Local *</label>
-            <select className="form-select" value={form.local} onChange={e => set('local', e.target.value)}>
-              {LOCAIS.map(l => <option key={l}>{l}</option>)}
-            </select>
+            <label className="form-label">Local / Igreja *</label>
+            {!addingLocal ? (
+              <>
+                <select className="form-select" value={form.local} onChange={e => set('local', e.target.value)} required>
+                  {locais.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm local-add-btn"
+                  onClick={() => setAddingLocal(true)}
+                >
+                  + Cadastrar nova igreja
+                </button>
+              </>
+            ) : (
+              <div className="local-add-row">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ex: Umuarama, Perobal..."
+                  value={newLocal}
+                  autoFocus
+                  onChange={e => setNewLocal(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddLocal();
+                    }
+                  }}
+                />
+                <button type="button" className="btn btn-blue btn-sm" onClick={handleAddLocal} disabled={!newLocal.trim()}>
+                  Adicionar
+                </button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => { setAddingLocal(false); setNewLocal(''); }}>
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -278,7 +335,7 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 
           <div className="modal-footer">
             <button type="button" className="btn btn-outline" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-blue" disabled={saving}>
+            <button type="submit" className="btn btn-blue" disabled={saving || addingLocal}>
               {saving ? '...' : isEdit ? 'Salvar alterações' : 'Adicionar'}
             </button>
           </div>
@@ -658,7 +715,8 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
     }
 
     let local = 'Iporã';
-    const foundLocal = LOCAIS.find(l => lower.includes(l.toLowerCase()));
+    const knownLocais = getMergedLocais();
+    const foundLocal = knownLocais.find(l => lower.includes(l.toLowerCase()));
     if (foundLocal) {
       local = foundLocal;
     } else {
