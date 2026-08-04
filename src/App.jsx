@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
-         formatDate, buildEventLabel, getSectionBadge, checkRuleViolations, cleanLocalName } from './constants';
+         formatDate, buildEventLabel, buildEventDescription, getSectionBadge, checkRuleViolations, cleanLocalName } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
  
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
@@ -918,7 +918,7 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
 }
 
 // ─── Month Editor ─────────────────────────────────────────────────────────────
-function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true, onToast }) {
+function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack, isAdmin = true, onToast, publicToolbar = null }) {
   const [modal, setModal] = useState(null);
   const [showPrint, setShowPrint] = useState(false);
   const [showCloneModal, setShowCloneModal] = useState(false);
@@ -1176,6 +1176,13 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
     return clean === selectedDateStr;
   });
 
+  const isOnCurrentMonth = publicToolbar
+    && month === publicToolbar.currentMonth
+    && year === publicToolbar.currentYear;
+  const isOnNextMonth = publicToolbar
+    && month === publicToolbar.nextMonth
+    && year === publicToolbar.nextYear;
+
   return (
     <div>
       {isAdmin && (
@@ -1216,7 +1223,54 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
         </div>
       </div>
 
-      {events.length > 0 && (
+      {publicToolbar && (
+        <div className="public-mobile-toolbar">
+          <p className="public-mobile-toolbar-label">Período</p>
+          <div className="public-mobile-month-nav">
+            <button
+              type="button"
+              className="public-mobile-month-nav-btn"
+              disabled={isOnCurrentMonth}
+              onClick={() => publicToolbar.onSelectMonth(publicToolbar.currentMonth, publicToolbar.currentYear)}
+              aria-label="Mês atual"
+            >
+              <ChevronLeft />
+            </button>
+            <div className="public-mobile-month-nav-center">
+              <span className="public-mobile-month-nav-title">{monthName} {year}</span>
+              <span className="public-mobile-month-nav-sub">
+                {isOnCurrentMonth ? 'Mês atual' : isOnNextMonth ? 'Próximo mês' : ''}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="public-mobile-month-nav-btn"
+              disabled={isOnNextMonth}
+              onClick={() => publicToolbar.onSelectMonth(publicToolbar.nextMonth, publicToolbar.nextYear)}
+              aria-label="Próximo mês"
+            >
+              <ChevronRight />
+            </button>
+          </div>
+
+          {events.length > 0 && (
+            <>
+              <div className="public-mobile-toolbar-divider" />
+              <p className="public-mobile-toolbar-label">Visualização</p>
+              <div className="view-tabs public-mobile-view-tabs">
+                <button className={`view-tab ${viewTab === 'list' ? 'active' : ''}`} onClick={() => setViewTab('list')}>
+                  Lista
+                </button>
+                <button className={`view-tab ${viewTab === 'calendar' ? 'active' : ''}`} onClick={() => setViewTab('calendar')}>
+                  Grade Mensal
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {events.length > 0 && !publicToolbar && (
         <div className="view-tabs">
           <button className={`view-tab ${viewTab === 'list' ? 'active' : ''}`} onClick={() => setViewTab('list')}>
             Lista
@@ -1311,14 +1365,15 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
               <div className="event-list">
                 {sectionEvents.map(ev => {
                   const badge = getSectionBadge(ev);
-                  const label = buildEventLabel(ev);
                   const warnings = checkRuleViolations(ev, allEvents);
                   return (
                     <div key={ev.id} className="event-row">
-                      <span className="event-date">{formatDate(ev.event_date)}</span>
-                      <span className="event-time">{ev.time}</span>
+                      <div className="event-row-meta">
+                        <span className="event-date">{formatDate(ev.event_date)}</span>
+                        <span className="event-time">{ev.time}</span>
+                      </div>
                       <span className="event-desc">
-                        {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` - ${ev.observation}`, '')}
+                        {buildEventDescription(ev)}
                         {ev.observation && ev.observation !== '__seeded__' && (
                           <span className="event-obs"> - {ev.observation}</span>
                         )}
@@ -1908,14 +1963,15 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
             <div className="event-list">
               {grouped[m].map(ev => {
                 const badge = getSectionBadge(ev);
-                const label = buildEventLabel(ev);
                 const warnings = checkRuleViolations(ev, allEvents);
                 return (
                   <div key={ev.id} className="event-row">
-                    <span className="event-date">{formatDate(ev.event_date)}</span>
-                    <span className="event-time">{ev.time}</span>
+                    <div className="event-row-meta">
+                      <span className="event-date">{formatDate(ev.event_date)}</span>
+                      <span className="event-time">{ev.time}</span>
+                    </div>
                     <span className="event-desc">
-                      {label.replace(formatDate(ev.event_date) + ' ', '').replace(` ${ev.time} h`, '').replace(` - ${ev.observation}`, '')}
+                      {buildEventDescription(ev)}
                       {ev.observation && ev.observation !== '__seeded__' && (
                         <span className="event-obs"> - {ev.observation}</span>
                       )}
@@ -2008,12 +2064,43 @@ export default function App() {
     return localStorage.getItem('accessibility_font_scale') || 'normal';
   });
 
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
+
   useEffect(() => {
-    document.body.className = theme === 'dark' ? 'dark' : '';
-    if (fontScale === 'large') document.body.classList.add('font-scale-lg');
-    if (fontScale === 'xlarge') document.body.classList.add('font-scale-xl');
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isPublicMobile = !isAdminMode && isMobile;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const topColor = theme === 'dark' ? '#2F3C46' : '#1e4d8c';
+
+    root.classList.toggle('dark', theme === 'dark');
+    document.body.classList.toggle('dark', theme === 'dark');
+    document.body.classList.toggle('font-scale-lg', fontScale === 'large');
+    document.body.classList.toggle('font-scale-xl', fontScale === 'xlarge');
+    root.classList.toggle('public-mobile-view', isPublicMobile);
+    document.body.classList.toggle('public-mobile-view', isPublicMobile);
+
+    if (isPublicMobile) {
+      root.style.backgroundColor = topColor;
+      document.body.style.backgroundColor = topColor;
+    } else {
+      root.style.backgroundColor = '';
+      document.body.style.backgroundColor = '';
+    }
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute('content', isPublicMobile ? topColor : (theme === 'dark' ? '#151c22' : '#F2F5F6'));
+    }
+
     localStorage.setItem('theme', theme);
-  }, [theme, fontScale]);
+    localStorage.setItem('accessibility_font_scale', fontScale);
+  }, [theme, fontScale, isPublicMobile]);
 
   // Handle simple client-side routing
   const navigateTo = (path) => {
@@ -2221,9 +2308,25 @@ export default function App() {
 
   const activeMonthName = selectedMonth ? MONTHS[selectedMonth - 1] : '';
 
+  const handlePublicShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setToast('Link copiado para a área de transferência!');
+    } catch {
+      setToast('Não foi possível copiar o link.');
+    }
+  };
+
+  const publicMonthEvents = events.filter(e => {
+    if (e.month === selectedMonth && e.year === selectedYear) return true;
+    const isNextMonth = e.month === selectedMonth + 1 || (selectedMonth === 12 && e.month === 1);
+    if (isNextMonth && e.show_in_prev_month) return true;
+    return false;
+  });
+
   // Render normal layout (Admin Panel or Public Area)
   return (
-    <div className="app">
+    <div className={`app${isPublicMobile ? ' is-public-mobile' : ''}`}>
       <div className="main-workspace">
         {/* Header Desktop (Telas Grandes) */}
         <header className="workspace-header">
@@ -2287,47 +2390,100 @@ export default function App() {
           </div>
         </header>
 
-        {/* Header Mobile (Smartphones / Tablets) */}
-        <header className="mobile-header">
-          <div className="mobile-header-row">
-            <div className="mobile-brand" onClick={() => navigateTo('/')} style={{ cursor: 'pointer' }}>
-              <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
-              <div>
-                <div className="mobile-brand-title">Lista de Missões</div>
-                <div className="mobile-brand-sub">CCB Iporã-PR</div>
+        {/* Header Mobile — layout público (hero) ou admin (barra compacta) */}
+        {isPublicMobile ? (
+          <header className="public-mobile-hero">
+            <div className="public-mobile-hero-top">
+              <div className="public-mobile-hero-brand" onClick={() => navigateTo('/')} role="button" tabIndex={0}>
+                <img src="/logo.png" alt="CCB" className="public-mobile-hero-logo" />
+                <div>
+                  <p className="public-mobile-hero-eyebrow">Congregação Cristã no Brasil</p>
+                  <h1 className="public-mobile-hero-title">Lista de Missões</h1>
+                  <p className="public-mobile-hero-sub">Região de Iporã-PR</p>
+                </div>
+              </div>
+              <div className="public-mobile-hero-actions">
+                <button
+                  type="button"
+                  className="public-mobile-hero-btn"
+                  onClick={handlePublicShare}
+                  title="Compartilhar link"
+                >
+                  <ShareIcon size={14} />
+                </button>
               </div>
             </div>
-            
-            <div className="mobile-header-actions">
-              <button 
-                className="btn btn-ghost btn-sm font-toggle-mobile-btn" 
-                onClick={() => setFontScale(s => s === 'normal' ? 'large' : s === 'large' ? 'xlarge' : 'normal')}
-                title="Ajustar tamanho da fonte"
-              >
-                {fontScale === 'normal' ? 'A' : fontScale === 'large' ? 'A+' : 'A++'}
-              </button>
-
-              <button 
-                className="btn btn-ghost btn-sm btn-icon" 
+            <div className="public-mobile-hero-toolbar">
+              <div className="public-mobile-font-pills">
+                {[
+                  { key: 'normal', label: 'A' },
+                  { key: 'large', label: 'A+' },
+                  { key: 'xlarge', label: 'A++' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`public-mobile-font-pill${fontScale === key ? ' active' : ''}`}
+                    onClick={() => setFontScale(key)}
+                    title={key === 'normal' ? 'Normal' : key === 'large' ? 'Grande' : 'Extra grande'}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="public-mobile-theme-toggle"
                 onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-                style={{ padding: '6px' }}
-                title="Alternar tema"
+                title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+                aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
               >
-                {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
+                {theme === 'light' ? <MoonIcon size={16} /> : <SunIcon size={16} />}
               </button>
-
-              {isAdminMode && adminUser && (
-                <button 
-                  className="btn btn-ghost btn-sm" 
-                  onClick={handleLogout} 
-                  style={{ fontSize: '11px', color: 'var(--accent-red)', padding: '4px 8px', fontWeight: 700 }}
-                >
-                  Sair
-                </button>
-              )}
             </div>
-          </div>
-        </header>
+          </header>
+        ) : (
+          <header className="mobile-header">
+            <div className="mobile-header-row">
+              <div className="mobile-brand" onClick={() => navigateTo('/')} style={{ cursor: 'pointer' }}>
+                <img src="/logo.png" alt="CCB" className="app-brand-logo app-brand-logo--mobile" />
+                <div>
+                  <div className="mobile-brand-title">Lista de Missões</div>
+                  <div className="mobile-brand-sub">CCB Iporã-PR</div>
+                </div>
+              </div>
+
+              <div className="mobile-header-actions">
+                <button
+                  className="btn btn-ghost btn-sm font-toggle-mobile-btn"
+                  onClick={() => setFontScale(s => s === 'normal' ? 'large' : s === 'large' ? 'xlarge' : 'normal')}
+                  title="Ajustar tamanho da fonte"
+                >
+                  {fontScale === 'normal' ? 'A' : fontScale === 'large' ? 'A+' : 'A++'}
+                </button>
+
+                <button
+                  className="btn btn-ghost btn-sm btn-icon"
+                  onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+                  style={{ padding: '6px' }}
+                  title="Alternar tema"
+                >
+                  {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
+                </button>
+
+                {isAdminMode && adminUser && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleLogout}
+                    style={{ fontSize: '11px', color: 'var(--accent-red)', padding: '4px 8px', fontWeight: 700 }}
+                  >
+                    Sair
+                  </button>
+                )}
+              </div>
+            </div>
+          </header>
+        )}
   
         <main className="main-body">
           {loading ? (
@@ -2336,72 +2492,76 @@ export default function App() {
             </div>
           ) : !isAdminMode ? (
             /* Public View: Only shows events of current month and next month with monthly switcher */
-            <div>
-              <div className="public-welcome-header" style={{ marginBottom: '16px' }}>
-                <h1 className="page-title">Lista de Missões</h1>
-                <p className="page-subtitle">Exibindo eventos oficiais da Congregação Cristã no Brasil para a região de Iporã-PR.</p>
-              </div>
+            <div className={isPublicMobile ? 'public-mobile-content' : ''}>
+              {!isPublicMobile && (
+                <>
+                  <div className="public-welcome-header" style={{ marginBottom: '16px' }}>
+                    <h1 className="page-title">Lista de Missões</h1>
+                    <p className="page-subtitle">Exibindo eventos oficiais da Congregação Cristã no Brasil para a região de Iporã-PR.</p>
+                  </div>
 
-              {/* Seletor Integrado de Tamanho de Texto */}
-              <div className="senior-font-bar">
-                <span className="senior-font-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <TextSizeIcon size={15} /> Tamanho da Letra:
-                </span>
-                <div className="senior-font-segmented">
-                  <button 
-                    className={`senior-font-btn ${fontScale === 'normal' ? 'active' : ''}`}
-                    onClick={() => setFontScale('normal')}
-                  >
-                    A <small style={{ fontWeight: 400, opacity: 0.8 }}>(Normal)</small>
-                  </button>
-                  <button 
-                    className={`senior-font-btn ${fontScale === 'large' ? 'active' : ''}`}
-                    onClick={() => setFontScale('large')}
-                  >
-                    A+ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Grande)</small>
-                  </button>
-                  <button 
-                    className={`senior-font-btn ${fontScale === 'xlarge' ? 'active' : ''}`}
-                    onClick={() => setFontScale('xlarge')}
-                  >
-                    A++ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Extra)</small>
-                  </button>
-                </div>
-              </div>
+                  <div className="senior-font-bar">
+                    <span className="senior-font-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <TextSizeIcon size={15} /> Tamanho da Letra:
+                    </span>
+                    <div className="senior-font-segmented">
+                      <button
+                        className={`senior-font-btn ${fontScale === 'normal' ? 'active' : ''}`}
+                        onClick={() => setFontScale('normal')}
+                      >
+                        A <small style={{ fontWeight: 400, opacity: 0.8 }}>(Normal)</small>
+                      </button>
+                      <button
+                        className={`senior-font-btn ${fontScale === 'large' ? 'active' : ''}`}
+                        onClick={() => setFontScale('large')}
+                      >
+                        A+ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Grande)</small>
+                      </button>
+                      <button
+                        className={`senior-font-btn ${fontScale === 'xlarge' ? 'active' : ''}`}
+                        onClick={() => setFontScale('xlarge')}
+                      >
+                        A++ <small style={{ fontWeight: 400, opacity: 0.8 }}>(Extra)</small>
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Seleção de Mês com Cartões Destacados */}
-              <div className="senior-month-tabs">
-                <button 
-                  className={`senior-month-btn ${selectedMonth === currentMonth ? 'active' : ''}`}
-                  onClick={() => { setSelectedMonth(currentMonth); setSelectedYear(currentYear); }}
-                >
-                  <span className="month-title">{MONTHS[currentMonth - 1]} {currentYear}</span>
-                  <span className="month-badge">Mês Atual</span>
-                </button>
-                <button 
-                  className={`senior-month-btn ${selectedMonth === nextMonth ? 'active' : ''}`}
-                  onClick={() => { setSelectedMonth(nextMonth); setSelectedYear(nextYear); }}
-                >
-                  <span className="month-title">{MONTHS[nextMonth - 1]} {nextYear}</span>
-                  <span className="month-badge">Próximo Mês</span>
-                </button>
-              </div>
+                  <div className="senior-month-tabs">
+                    <button
+                      className={`senior-month-btn ${selectedMonth === currentMonth && selectedYear === currentYear ? 'active' : ''}`}
+                      onClick={() => { setSelectedMonth(currentMonth); setSelectedYear(currentYear); }}
+                    >
+                      <span className="month-title">{MONTHS[currentMonth - 1]} {currentYear}</span>
+                      <span className="month-badge">Mês Atual</span>
+                    </button>
+                    <button
+                      className={`senior-month-btn ${selectedMonth === nextMonth && selectedYear === nextYear ? 'active' : ''}`}
+                      onClick={() => { setSelectedMonth(nextMonth); setSelectedYear(nextYear); }}
+                    >
+                      <span className="month-title">{MONTHS[nextMonth - 1]} {nextYear}</span>
+                      <span className="month-badge">Próximo Mês</span>
+                    </button>
+                  </div>
+                </>
+              )}
 
-              <MonthEditor 
-                month={selectedMonth} 
-                year={selectedYear} 
-                events={events.filter(e => {
-                  if (e.month === selectedMonth && e.year === selectedYear) return true;
-                  const isNextMonth = e.month === selectedMonth + 1 || (selectedMonth === 12 && e.month === 1);
-                  if (isNextMonth && e.show_in_prev_month) return true;
-                  return false;
-                })}
+              <MonthEditor
+                month={selectedMonth}
+                year={selectedYear}
+                events={publicMonthEvents}
                 allEvents={events}
                 onSave={handleSave}
                 onDelete={handleDelete}
                 onBack={() => {}}
-                isAdmin={false} // Read-only for public visitors
+                isAdmin={false}
                 onToast={setToast}
+                publicToolbar={isPublicMobile ? {
+                  currentMonth,
+                  currentYear,
+                  nextMonth,
+                  nextYear,
+                  onSelectMonth: (m, y) => { setSelectedMonth(m); setSelectedYear(y); },
+                } : null}
               />
             </div>
           ) : searchTerm ? (

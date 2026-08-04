@@ -104,6 +104,28 @@ export function buildEventLabel(ev) {
   return label;
 }
 
+// Descrição do evento sem data/hora (para listas que já exibem esses campos separados)
+export function buildEventDescription(ev) {
+  const type = ev.event_type;
+  const parcial = ev.is_parcial;
+  const local = cleanLocalName(ev.local);
+
+  if (type === 'Ensaio' || type === 'Ensaio Regional') {
+    if (type === 'Ensaio Regional') return `Ensaio Regional em ${local}`;
+    if (parcial) return `Ensaio Parcial em ${local}`;
+    if (local === 'Iporã') {
+      const cleanDateStr = ev.event_date.includes('T') ? ev.event_date.split('T')[0] : ev.event_date;
+      const month = parseInt(cleanDateStr.split('-')[1], 10);
+      return month % 2 === 0 ? 'Ensaio de Iporã e Região' : 'Ensaio Local em Iporã';
+    }
+    return `Ensaio Local em ${local}`;
+  }
+
+  let label = type;
+  if (local) label += ` em ${local}`;
+  return label;
+}
+
 export function getSectionBadge(ev) {
   const type = ev.event_type;
   if (type === 'Ensaio Regional') return 'regional';

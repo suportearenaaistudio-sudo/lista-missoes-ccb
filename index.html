@@ -17,12 +17,13 @@
 
     <!-- PWA / App -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#2F3C46" />
+    <meta name="theme-color" content="#1e4d8c" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- iOS Add to Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="CCB Iporã" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -46,6 +47,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Cor do topo = cabeçalho (antes do React, evita flash no iPhone) -->
+    <script>
+      (function () {
+        var theme = localStorage.getItem('theme') || 'light';
+        var isPublic = window.innerWidth <= 1024 && !window.location.pathname.startsWith('/dev-admin');
+        if (!isPublic) return;
+        var top = theme === 'dark' ? '#2F3C46' : '#1e4d8c';
+        var root = document.documentElement;
+        root.classList.add('public-mobile-view');
+        if (theme === 'dark') {
+          root.classList.add('dark');
+          document.body.classList.add('dark');
+        }
+        root.style.backgroundColor = top;
+        document.body.style.backgroundColor = top;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', top);
+      })();
+    </script>
     <!-- Google Identity Services (GSI) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
