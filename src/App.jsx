@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
-         formatDate, buildEventLabel, buildEventDescription, getSectionBadge, checkRuleViolations, cleanLocalName } from './constants';
+         formatDate, buildEventLabel, buildEventDescription, getSectionBadge, getBadgeLabel, checkRuleViolations, cleanLocalName } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
  
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
@@ -640,6 +640,8 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
       type = 'Culto Unificado';
     } else if (lower.includes('mocidade') || lower.includes('reunião de mocidade') || lower.includes('reuniao de mocidade')) {
       type = 'Reunião de Mocidade';
+    } else if (lower.includes('técnico') || lower.includes('tecnico')) {
+      type = 'Ensaio Técnico';
     } else if (lower.includes('regional')) {
       type = 'Ensaio Regional';
     }
@@ -1313,7 +1315,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
                       <div key={ev.id} className="mobile-event-card">
                         <div className="mobile-event-time-badge">
                           <span className="time">{ev.time}</span>
-                          {badge && <span className={`event-badge badge-${badge}`}>{badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}</span>}
+                          {badge && <span className={`event-badge badge-${badge}`}>{getBadgeLabel(badge, ev.event_type)}</span>}
                         </div>
                         <div className="mobile-event-info">
                           <span className="location">{ev.local}</span>
@@ -1385,7 +1387,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
                       </span>
                       {badge && (
                         <span className={`event-badge badge-${badge}`}>
-                          {badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}
+                          {getBadgeLabel(badge, ev.event_type)}
                         </span>
                       )}
                       {isAdmin && (
@@ -1468,6 +1470,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
             <div className="calendar-capture-legend" style={{ display: 'flex', gap: '12px', fontSize: '11px', fontWeight: 600, color: '#475569' }}>
               <div className="legend-item"><span className="legend-dot dot-local"></span> Ensaio Local</div>
               <div className="legend-item"><span className="legend-dot dot-parcial"></span> Ensaio Parcial</div>
+              <div className="legend-item"><span className="legend-dot dot-tecnico"></span> Ensaio Técnico</div>
               <div className="legend-item"><span className="legend-dot dot-regional"></span> Ensaio Regional</div>
               <div className="legend-item"><span className="legend-dot dot-culto"></span> Culto</div>
               <div className="legend-item"><span className="legend-dot dot-jovens"></span> Jovens / Mocidade</div>
@@ -1532,7 +1535,7 @@ function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSel
   let countMocidade = 0;
 
   events.forEach(ev => {
-    if (ev.event_type === 'Ensaio' || ev.event_type === 'Ensaio Regional') {
+    if (ev.event_type === 'Ensaio' || ev.event_type === 'Ensaio Regional' || ev.event_type === 'Ensaio Técnico') {
       countEnsaios++;
     } else if (ev.event_type === 'Culto Unificado' || ev.event_type === 'Culto de Evangelização') {
       countCultos++;
@@ -1859,7 +1862,7 @@ function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSel
                   </div>
                   {badge && (
                     <span className={`event-badge badge-${badge}`}>
-                      {badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}
+                      {getBadgeLabel(badge, ev.event_type)}
                     </span>
                   )}
                 </div>
@@ -1983,7 +1986,7 @@ function SearchResults({ searchTerm, events, allEvents, onSelectMonth, onSave, o
                     </span>
                     {badge && (
                       <span className={`event-badge badge-${badge}`}>
-                        {badge === 'parcial' ? 'Parcial' : badge === 'regional' ? 'Regional' : ev.event_type}
+                        {getBadgeLabel(badge, ev.event_type)}
                       </span>
                     )}
                     <div className="event-actions">

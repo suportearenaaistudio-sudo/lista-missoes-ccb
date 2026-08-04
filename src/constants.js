@@ -20,6 +20,7 @@ export const LOCAIS = [
 
 export const SECTIONS = {
   'Ensaio': 'ENSAIOS MENSAIS',
+  'Ensaio Técnico': 'ENSAIOS TÉCNICOS',
   'Culto de Evangelização': 'CULTO DE EVANGELIZAÇÃO',
   'Culto de Jovens': 'CULTO DE JOVENS',
   'Culto Unificado': 'CULTO UNIFICADO',
@@ -29,6 +30,7 @@ export const SECTIONS = {
 
 export const SECTION_ORDER = [
   'ENSAIOS MENSAIS',
+  'ENSAIOS TÉCNICOS',
   'CULTO DE EVANGELIZAÇÃO',
   'CULTO DE JOVENS',
   'CULTO UNIFICADO',
@@ -59,7 +61,7 @@ export function cleanLocalName(rawLocal) {
 
   // Caso contrário, remove prefixos de tipos de evento que possam ter sido incluídos por engano
   cleaned = cleaned
-    .replace(/^ensaio (parcial|local|regional)? (em|de)?\s*/i, '')
+    .replace(/^ensaio (parcial|local|regional|t[eé]cnico)? (em|de)?\s*/i, '')
     .replace(/^culto (unificado|de evangelização|de jovens)? (em)?\s*/i, '')
     .replace(/^reunião de mocidade (em)?\s*/i, '')
     .trim();
@@ -77,7 +79,9 @@ export function buildEventLabel(ev) {
 
   let label = dateStr + ' ';
 
-  if (type === 'Ensaio' || type === 'Ensaio Regional') {
+  if (type === 'Ensaio Técnico') {
+    label += `Ensaio Técnico em ${local}`;
+  } else if (type === 'Ensaio' || type === 'Ensaio Regional') {
     if (type === 'Ensaio Regional') {
       label += `Ensaio Regional em ${local}`;
     } else if (parcial) {
@@ -99,6 +103,10 @@ export function buildEventLabel(ev) {
     if (local) label += ` em ${local}`;
   }
 
+  if (ev.observation && ev.observation !== '__seeded__') {
+    label += ` - ${ev.observation}`;
+  }
+
   label += ` às ${ev.time}`;
 
   return label;
@@ -109,6 +117,10 @@ export function buildEventDescription(ev) {
   const type = ev.event_type;
   const parcial = ev.is_parcial;
   const local = cleanLocalName(ev.local);
+
+  if (type === 'Ensaio Técnico') {
+    return `Ensaio Técnico em ${local}`;
+  }
 
   if (type === 'Ensaio' || type === 'Ensaio Regional') {
     if (type === 'Ensaio Regional') return `Ensaio Regional em ${local}`;
@@ -129,11 +141,19 @@ export function buildEventDescription(ev) {
 export function getSectionBadge(ev) {
   const type = ev.event_type;
   if (type === 'Ensaio Regional') return 'regional';
+  if (type === 'Ensaio Técnico') return 'tecnico';
   if (ev.is_parcial) return 'parcial';
   if (type === 'Culto Unificado' || type === 'Culto de Evangelização') return 'culto';
   if (type === 'Reunião de Mocidade') return 'mocidade';
   if (type === 'Culto de Jovens') return 'jovens';
   return null;
+}
+
+export function getBadgeLabel(badge, eventType) {
+  if (badge === 'parcial') return 'Parcial';
+  if (badge === 'regional') return 'Regional';
+  if (badge === 'tecnico') return 'Técnico';
+  return eventType;
 }
 
 export function checkRuleViolations(event, allEvents) {

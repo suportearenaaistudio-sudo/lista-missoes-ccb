@@ -29,6 +29,8 @@
   --accent-amber-light: rgba(245, 158, 11, 0.08);
   --accent-purple: #8b5cf6;
   --accent-purple-light: rgba(139, 92, 246, 0.08);
+  --accent-teal: #0d9488;
+  --accent-teal-light: rgba(13, 148, 136, 0.08);
   
   /* Sidebar Palette (Dark Charcoal) */
   --sb-bg: #2F3C46;
@@ -70,6 +72,7 @@ body.dark {
   --accent-red-light: rgba(239, 68, 68, 0.15);
   --accent-amber-light: rgba(245, 158, 11, 0.15);
   --accent-purple-light: rgba(139, 92, 246, 0.15);
+  --accent-teal-light: rgba(13, 148, 136, 0.15);
   
   --sb-bg: #0e1216;
   --sb-hover: #1e262c;
@@ -881,9 +884,8 @@ body.dark .btn-danger {
 
 .event-obs {
   font-size: 13px;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-left: 6px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 /* Badges with light pastel fill and dark border */
@@ -922,6 +924,11 @@ body.dark .btn-danger {
   background: var(--accent-purple-light); 
   color: var(--accent-purple); 
   border-color: rgba(139, 92, 246, 0.2); 
+}
+.badge-tecnico { 
+  background: var(--accent-teal-light); 
+  color: var(--accent-teal); 
+  border-color: rgba(13, 148, 136, 0.2); 
 }
 
 .event-actions {
@@ -1071,6 +1078,7 @@ body.dark .btn-danger {
 
 .calendar-event-tag.tag-parcial { border-left-color: var(--accent-amber); background: var(--accent-amber-light); }
 .calendar-event-tag.tag-regional { border-left-color: var(--accent-purple); background: var(--accent-purple-light); }
+.calendar-event-tag.tag-tecnico { border-left-color: var(--accent-teal); background: var(--accent-teal-light); }
 .calendar-event-tag.tag-culto { border-left-color: var(--accent-blue); background: var(--accent-blue-light); }
 .calendar-event-tag.tag-mocidade { border-left-color: var(--accent-green); background: var(--accent-green-light); }
 .calendar-event-tag.tag-jovens { border-left-color: var(--accent-green); background: var(--accent-green-light); }
@@ -1710,6 +1718,7 @@ body.dark .validation-warning-banner {
 .legend-dot.dot-local { background: #cbd5e1; border: 1px solid #94a3b8; }
 .legend-dot.dot-parcial { background: var(--accent-amber); }
 .legend-dot.dot-regional { background: var(--accent-purple); }
+.legend-dot.dot-tecnico { background: var(--accent-teal); }
 .legend-dot.dot-culto { background: var(--accent-blue); }
 .legend-dot.dot-jovens { background: var(--accent-green); }
 
@@ -1938,6 +1947,7 @@ body.dark .calendar-capture-legend {
 .cell-dot.dot-local { background: var(--accent-blue); }
 .cell-dot.dot-parcial { background: var(--accent-amber); }
 .cell-dot.dot-regional { background: var(--accent-purple); }
+.cell-dot.dot-tecnico { background: var(--accent-teal); }
 .cell-dot.dot-culto { background: var(--accent-red); }
 .cell-dot.dot-jovens { background: var(--accent-green); }
 .cell-dot.dot-custom { background: #94a3b8; }
