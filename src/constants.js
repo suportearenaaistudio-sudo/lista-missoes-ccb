@@ -68,6 +68,7 @@ export const SECTIONS = {
   'Ensaio Técnico': 'ENSAIOS TÉCNICOS',
   'Culto de Evangelização': 'CULTO DE EVANGELIZAÇÃO',
   'Culto de Jovens': 'CULTO DE JOVENS',
+  'Culto de Jovens Unificado': 'CULTO DE JOVENS UNIFICADO',
   'Culto Unificado': 'CULTO UNIFICADO',
   'Reunião de Mocidade': 'REUNIÃO DE MOCIDADE',
   'Ensaio Regional': 'ENSAIO REGIONAL',
@@ -78,10 +79,62 @@ export const SECTION_ORDER = [
   'ENSAIOS TÉCNICOS',
   'CULTO DE EVANGELIZAÇÃO',
   'CULTO DE JOVENS',
+  'CULTO DE JOVENS UNIFICADO',
   'CULTO UNIFICADO',
   'REUNIÃO DE MOCIDADE',
   'ENSAIO REGIONAL',
 ];
+
+const CUSTOM_EVENT_TYPES_KEY = 'custom_event_types_regiao';
+
+function normalizeTypeName(name) {
+  return (name || '').trim().replace(/\s+/g, ' ');
+}
+
+export function loadCustomEventTypes() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CUSTOM_EVENT_TYPES_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.map(normalizeTypeName).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomEventType(name) {
+  const cleaned = normalizeTypeName(name);
+  if (!cleaned) return null;
+
+  const defaultTypes = Object.keys(SECTIONS);
+  const existsInDefault = defaultTypes.some(t => t.toLowerCase() === cleaned.toLowerCase());
+  const custom = loadCustomEventTypes();
+  const existsInCustom = custom.some(t => t.toLowerCase() === cleaned.toLowerCase());
+
+  if (!existsInDefault && !existsInCustom && typeof localStorage !== 'undefined') {
+    localStorage.setItem(CUSTOM_EVENT_TYPES_KEY, JSON.stringify([...custom, cleaned]));
+  }
+
+  const known = [...defaultTypes, ...custom].find(t => t.toLowerCase() === cleaned.toLowerCase());
+  return known || cleaned;
+}
+
+export function getMergedEventTypes(eventTypes = []) {
+  const merged = new Map();
+  [...Object.keys(SECTIONS), ...loadCustomEventTypes(), ...eventTypes]
+    .map(normalizeTypeName)
+    .filter(Boolean)
+    .forEach(type => {
+      const key = type.toLowerCase();
+      if (!merged.has(key)) merged.set(key, type);
+    });
+  return Array.from(merged.values());
+}
+
+export function getSectionForType(type) {
+  if (!type) return 'ENSAIOS MENSAIS';
+  if (SECTIONS[type]) return SECTIONS[type];
+  return type.toUpperCase();
+}
 
 export const EVENT_TYPES = Object.keys(SECTIONS);
 
@@ -108,7 +161,7 @@ export function cleanLocalName(rawLocal) {
   // Caso contrário, remove prefixos de tipos de evento que possam ter sido incluídos por engano
   cleaned = cleaned
     .replace(/^ensaio (parcial|local|regional|t[eé]cnico)? (em|de)?\s*/i, '')
-    .replace(/^culto (unificado|de evangelização|de jovens)? (em)?\s*/i, '')
+    .replace(/^culto (unificado|de evangelização|de jovens unificado|de jovens)? (em)?\s*/i, '')
     .replace(/^reunião de mocidade (em)?\s*/i, '')
     .trim();
 
@@ -191,7 +244,8 @@ export function getSectionBadge(ev) {
   if (ev.is_parcial) return 'parcial';
   if (type === 'Culto Unificado' || type === 'Culto de Evangelização') return 'culto';
   if (type === 'Reunião de Mocidade') return 'mocidade';
-  if (type === 'Culto de Jovens') return 'jovens';
+  if (type === 'Culto de Jovens' || type === 'Culto de Jovens Unificado') return 'jovens';
+  if (type && !['Ensaio'].includes(type)) return 'custom';
   return null;
 }
 

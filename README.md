@@ -9,8 +9,8 @@ Sistema web para gerenciamento e impressão das Listas de Missões da **Congrega
 - 📅 **Painel anual** com os 12 meses de 2026
 - ✅ **Dados pré-carregados** com todos os ensaios do ano (baseado na tabela de ensaios 2026)
 - ➕ **Adicionar / Editar / Excluir** eventos por mês
-- 🎯 **Tipos de evento**: Ensaio, Ensaio Regional, Culto Unificado, Culto de Evangelização, Reunião de Mocidade
-- 📍 **Locais**: Vila Nilza, Nova Santa Helena, Iporã, Francisco Alves, Rio Bonito, Cafezal do Sul, Guaiporã
+- 🎯 **Tipos de evento**: Ensaio, Ensaio Regional, Ensaio Técnico, Culto Unificado, Culto de Jovens, Culto de Jovens Unificado, Culto de Evangelização, Reunião de Mocidade (com suporte a **cadastrar novos tipos personalizados dinamicamente**)
+- 📍 **Locais**: Vila Nilza, Nova Santa Helena, Iporã, Francisco Alves, Rio Bonito, Cafezal do Sul, Guaiporã (com suporte a **cadastrar novas igrejas dinamicamente**)
 - 🖨️ **Impressão** em formato A4 paisagem com **3 colunas** (igual ao modelo Word)
 - 💾 **Banco de dados Neon** (PostgreSQL) via Vercel
 

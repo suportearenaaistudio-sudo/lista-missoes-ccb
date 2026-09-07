@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { MONTHS, SECTION_ORDER, SECTIONS, EVENT_TYPES, LOCAIS, YEAR as CURRENT_YEAR,
          formatDate, buildEventLabel, buildEventDescription, getSectionBadge, getBadgeLabel,
-         checkRuleViolations, cleanLocalName, getMergedLocais, saveCustomLocal } from './constants';
+         checkRuleViolations, cleanLocalName, getMergedLocais, saveCustomLocal,
+         getMergedEventTypes, saveCustomEventType, getSectionForType } from './constants';
 import { fetchAllEvents, createEvent, updateEvent, deleteEvent, runSetup } from './api';
- 
+
 // ─── Icons (inline SVG components) ──────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = 'currentColor', fill = 'none', children }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth="2"
@@ -12,7 +13,7 @@ const Icon = ({ d, size = 16, stroke = 'currentColor', fill = 'none', children }
     {d ? <path d={d} /> : children}
   </svg>
 );
- 
+
 const HomeIcon = () => <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10" />;
 const CalendarIcon = () => <Icon d="M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM16 2v4M8 2v4M3 10h18" />;
 const ChevronLeft = () => <Icon d="M15 18l-6-6 6-6" />;
@@ -147,11 +148,14 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
   const initialLocais = getMergedLocais((allEvents || []).map(e => e.local));
   const defaultLocal = event?.local || initialLocais.find(l => l === 'Iporã') || initialLocais[0] || LOCAIS[2];
 
+  const initialEventTypes = getMergedEventTypes((allEvents || []).map(e => e.event_type));
+  const defaultEventType = event?.event_type || initialEventTypes[0] || 'Ensaio';
+
   const [form, setForm] = useState({
     event_date: cleanEventDate,
     time: event?.time || '19:30',
     local: defaultLocal,
-    event_type: event?.event_type || 'Ensaio',
+    event_type: defaultEventType,
     is_parcial: event?.is_parcial ?? false,
     show_in_prev_month: event?.show_in_prev_month ?? false,
     observation: (event?.observation && event.observation !== '__seeded__') ? event.observation : '',
@@ -162,11 +166,20 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
   const [addingLocal, setAddingLocal] = useState(false);
   const [newLocal, setNewLocal] = useState('');
 
+  const [eventTypes, setEventTypes] = useState(initialEventTypes);
+  const [addingType, setAddingType] = useState(false);
+  const [newType, setNewType] = useState('');
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const refreshLocais = (selected) => {
     const next = getMergedLocais([...(allEvents || []).map(e => e.local), selected].filter(Boolean));
     setLocais(next);
+  };
+
+  const refreshEventTypes = (selected) => {
+    const next = getMergedEventTypes([...(allEvents || []).map(e => e.event_type), selected].filter(Boolean));
+    setEventTypes(next);
   };
 
   const handleAddLocal = () => {
@@ -176,6 +189,16 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
     set('local', saved);
     setAddingLocal(false);
     setNewLocal('');
+  };
+
+  const handleAddType = () => {
+    const saved = saveCustomEventType(newType);
+    if (!saved) return;
+    refreshEventTypes(saved);
+    set('event_type', saved);
+    if (saved !== 'Ensaio') set('is_parcial', false);
+    setAddingType(false);
+    setNewType('');
   };
 
   const currentEventObject = {
@@ -194,11 +217,12 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
     setSaving(true);
     try {
       const localName = saveCustomLocal(form.local) || form.local;
-      const section = SECTIONS[form.event_type] || 'ENSAIOS MENSAIS';
+      const typeName = saveCustomEventType(form.event_type) || form.event_type;
+      const section = getSectionForType(typeName);
       const [y, m] = form.event_date.split('-');
       const eventMonth = parseInt(m);
       const eventYear = parseInt(y);
-      const payload = { ...form, local: localName, section, month: eventMonth, year: eventYear };
+      const payload = { ...form, local: localName, event_type: typeName, section, month: eventMonth, year: eventYear };
 
       if (isEdit) {
         await onSave({ ...payload, id: event.id });
@@ -297,10 +321,44 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 
           <div className="form-group">
             <label className="form-label">Tipo de Evento *</label>
-            <select className="form-select" value={form.event_type}
-              onChange={e => { set('event_type', e.target.value); if (e.target.value !== 'Ensaio') set('is_parcial', false); }}>
-              {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
+            {!addingType ? (
+              <>
+                <select className="form-select" value={form.event_type}
+                  onChange={e => { set('event_type', e.target.value); if (e.target.value !== 'Ensaio') set('is_parcial', false); }} required>
+                  {eventTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm local-add-btn"
+                  onClick={() => setAddingType(true)}
+                >
+                  + Cadastrar novo tipo de evento
+                </button>
+              </>
+            ) : (
+              <div className="local-add-row">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ex: Batismo, Reunião de Jovens, Culto Especial..."
+                  value={newType}
+                  autoFocus
+                  onChange={e => setNewType(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddType();
+                    }
+                  }}
+                />
+                <button type="button" className="btn btn-blue btn-sm" onClick={handleAddType} disabled={!newType.trim()}>
+                  Adicionar
+                </button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => { setAddingType(false); setNewType(''); }}>
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
 
           {form.event_type === 'Ensaio' && (
@@ -335,7 +393,7 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 
           <div className="modal-footer">
             <button type="button" className="btn btn-outline" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-blue" disabled={saving || addingLocal}>
+            <button type="submit" className="btn btn-blue" disabled={saving || addingLocal || addingType}>
               {saving ? '...' : isEdit ? 'Salvar alterações' : 'Adicionar'}
             </button>
           </div>
@@ -352,14 +410,25 @@ function PrintPreview({ events, month, year, onClose }) {
   const [copies, setCopies] = useState(1);
 
   const grouped = {};
+  const customSections = [];
   SECTION_ORDER.forEach(s => { grouped[s] = []; });
   events.forEach(ev => {
-    const s = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
-    if (grouped[s]) grouped[s].push(ev);
-    else grouped[s] = [ev];
+    const s = getSectionForType(ev.event_type) || ev.section || 'ENSAIOS MENSAIS';
+    if (grouped[s]) {
+      grouped[s].push(ev);
+    } else {
+      grouped[s] = [ev];
+      if (!SECTION_ORDER.includes(s) && !customSections.includes(s)) {
+        customSections.push(s);
+      }
+    }
   });
-  SECTION_ORDER.forEach(s => {
-    grouped[s].sort((a, b) => a.event_date.localeCompare(b.event_date));
+
+  const effectiveSectionOrder = [...SECTION_ORDER, ...customSections];
+  effectiveSectionOrder.forEach(s => {
+    if (grouped[s]) {
+      grouped[s].sort((a, b) => a.event_date.localeCompare(b.event_date));
+    }
   });
 
   const handlePrint = () => {
@@ -374,7 +443,7 @@ function PrintPreview({ events, month, year, onClose }) {
         <div className="print-list-title">Lista de Missões - {monthName.toUpperCase()} {year}</div>
       </div>
 
-      {SECTION_ORDER.map(section => {
+      {effectiveSectionOrder.map(section => {
         const evs = grouped[section];
         if (!evs || evs.length === 0) return null;
         return (
@@ -689,7 +758,9 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
     if (!lower) return [];
 
     let type = 'Ensaio';
-    if (lower.includes('culto de jovens') || lower.includes('culto de jovem')) {
+    if (lower.includes('culto de jovens unificado') || lower.includes('jovens unificado')) {
+      type = 'Culto de Jovens Unificado';
+    } else if (lower.includes('culto de jovens') || lower.includes('culto de jovem')) {
       type = 'Culto de Jovens';
     } else if (lower.includes('culto de evangelização') || lower.includes('culto de evangelizacao')) {
       type = 'Culto de Evangelização';
@@ -701,12 +772,16 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
       type = 'Ensaio Técnico';
     } else if (lower.includes('regional')) {
       type = 'Ensaio Regional';
+    } else {
+      const knownTypes = getMergedEventTypes();
+      const matchCustom = knownTypes.find(t => lower.includes(t.toLowerCase()));
+      if (matchCustom) type = matchCustom;
     }
 
     const isParcial = lower.includes('parcial');
 
     let time = '19:30';
-    if (type === 'Culto de Jovens' || type === 'Reunião de Mocidade' || lower.includes('jovens')) time = '19:00';
+    if (type === 'Culto de Jovens' || type === 'Culto de Jovens Unificado' || type === 'Reunião de Mocidade' || lower.includes('jovens')) time = '19:00';
     const timeMatch = lower.match(/(\d{1,2})[:h](\d{2})?/);
     if (timeMatch) {
       const hh = String(timeMatch[1]).padStart(2, '0');
@@ -767,7 +842,7 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
               local,
               event_type: type,
               is_parcial: isParcial,
-              section: SECTIONS[type] || 'ENSAIOS MENSAIS',
+              section: getSectionForType(type),
               observation: '',
               month: m,
               year: yearVal
@@ -785,7 +860,7 @@ function AutoScheduleModal({ targetYear, onClose, onGenerate }) {
             local,
             event_type: type,
             is_parcial: isParcial,
-            section: SECTIONS[type] || 'ENSAIOS MENSAIS',
+            section: getSectionForType(type),
             observation: '',
             month: m,
             year: yearVal
@@ -1075,15 +1150,25 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
   const monthName = MONTHS[month - 1];
 
   const grouped = {};
+  const customSections = [];
   SECTION_ORDER.forEach(s => { grouped[s] = []; });
   events.forEach(ev => {
-    const s = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
-    if (!grouped[s]) grouped[s] = [];
-    grouped[s].push(ev);
+    const s = getSectionForType(ev.event_type) || ev.section || 'ENSAIOS MENSAIS';
+    if (grouped[s]) {
+      grouped[s].push(ev);
+    } else {
+      grouped[s] = [ev];
+      if (!SECTION_ORDER.includes(s) && !customSections.includes(s)) {
+        customSections.push(s);
+      }
+    }
   });
 
-  SECTION_ORDER.forEach(s => {
-    grouped[s].sort((a,b) => a.event_date.localeCompare(b.event_date));
+  const effectiveSectionOrder = [...SECTION_ORDER, ...customSections];
+  effectiveSectionOrder.forEach(s => {
+    if (grouped[s]) {
+      grouped[s].sort((a,b) => a.event_date.localeCompare(b.event_date));
+    }
   });
 
   const handleCloneFromAnyMonth = async (srcMonth, srcYear, srcEvents) => {
@@ -1094,7 +1179,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
       const targetDay = Math.min(parseInt(d), maxDays);
       const targetDate = `${year}-${String(month).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
       
-      const section = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
+      const section = getSectionForType(ev.event_type);
       await onSave({
         event_date: targetDate,
         time: ev.time,
@@ -1411,7 +1496,7 @@ function MonthEditor({ month, year, events, allEvents, onSave, onDelete, onBack,
           )}
         </div>
       ) : (
-        SECTION_ORDER.map(section => {
+        effectiveSectionOrder.map(section => {
           const sectionEvents = grouped[section];
           if (!sectionEvents || sectionEvents.length === 0) return null;
 
@@ -1593,11 +1678,13 @@ function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSel
   let countMocidade = 0;
 
   events.forEach(ev => {
-    if (ev.event_type === 'Ensaio' || ev.event_type === 'Ensaio Regional' || ev.event_type === 'Ensaio Técnico') {
+    const t = ev.event_type || '';
+    const lower = t.toLowerCase();
+    if (t === 'Ensaio' || t === 'Ensaio Regional' || t === 'Ensaio Técnico' || lower.includes('ensaio')) {
       countEnsaios++;
-    } else if (ev.event_type === 'Culto Unificado' || ev.event_type === 'Culto de Evangelização') {
+    } else if (t === 'Culto Unificado' || t === 'Culto de Evangelização' || t === 'Culto de Jovens' || t === 'Culto de Jovens Unificado' || lower.includes('culto')) {
       countCultos++;
-    } else if (ev.event_type === 'Reunião de Mocidade') {
+    } else if (t === 'Reunião de Mocidade' || lower.includes('mocidade')) {
       countMocidade++;
     }
   });
@@ -1623,7 +1710,7 @@ function YearDashboard({ events, allEvents, onSave, onDelete, onClearYear, onSel
       const targetDay = Math.min(parseInt(d), maxDays);
       const targetDate = `${tgtYear}-${String(tgtMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
       
-      const section = SECTIONS[ev.event_type] || 'ENSAIOS MENSAIS';
+      const section = getSectionForType(ev.event_type);
       await onSave({
         event_date: targetDate,
         time: ev.time,

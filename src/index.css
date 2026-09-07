@@ -930,6 +930,11 @@ body.dark .btn-danger {
   color: var(--accent-teal); 
   border-color: rgba(13, 148, 136, 0.2); 
 }
+.badge-custom { 
+  background: rgba(99, 102, 241, 0.12); 
+  color: #6366f1; 
+  border-color: rgba(99, 102, 241, 0.25); 
+}
 
 .event-actions {
   display: flex;
@@ -1082,6 +1087,7 @@ body.dark .btn-danger {
 .calendar-event-tag.tag-culto { border-left-color: var(--accent-blue); background: var(--accent-blue-light); }
 .calendar-event-tag.tag-mocidade { border-left-color: var(--accent-green); background: var(--accent-green-light); }
 .calendar-event-tag.tag-jovens { border-left-color: var(--accent-green); background: var(--accent-green-light); }
+.calendar-event-tag.tag-custom { border-left-color: #6366f1; background: rgba(99, 102, 241, 0.12); }
 
 /* ===== WARNING BANNER AND ITEMS ===== */
 .validation-warning-banner {
