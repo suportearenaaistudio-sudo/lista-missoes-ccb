@@ -408,6 +408,7 @@ function EventModal({ event, month, year, allEvents, onClose, onSave }) {
 function PrintPreview({ events, month, year, onClose }) {
   const monthName = MONTHS[month - 1];
   const [copies, setCopies] = useState(1);
+  const [spacingMode, setSpacingMode] = useState('normal');
 
   const grouped = {};
   const customSections = [];
@@ -449,9 +450,17 @@ function PrintPreview({ events, month, year, onClose }) {
         return (
           <div key={section}>
             <div className="print-section-title">{section}</div>
-            {evs.map(ev => (
-              <div key={ev.id} className="print-event">{buildEventLabel(ev)}</div>
-            ))}
+            {evs.map(ev => {
+              const dateStr = formatDate(ev.event_date);
+              const desc = buildEventDescription(ev);
+              const obs = ev.observation && ev.observation !== '__seeded__' ? ` - ${ev.observation}` : '';
+              const time = ` às ${ev.time}`;
+              return (
+                <div key={ev.id} className="print-event">
+                  <strong className="print-event-date">{dateStr}</strong> {desc}{obs}{time}
+                </div>
+              );
+            })}
           </div>
         );
       })}
@@ -469,6 +478,37 @@ function PrintPreview({ events, month, year, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>Impressão — {monthName} {year}</span>
           
+          {/* Seletor de Espaçamento */}
+          <div className="spacing-selector" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#334155', padding: '4px 12px', borderRadius: '10px', border: '1px solid #475569' }}>
+            <span style={{ fontSize: '12.5px', color: '#cbd5e1', fontWeight: 600 }}>Espaçamento:</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button 
+                type="button" 
+                className={`btn btn-sm ${spacingMode === 'compact' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setSpacingMode('compact')} 
+                style={{ fontSize: '11.5px', padding: '2px 8px', color: '#fff', background: spacingMode === 'compact' ? 'var(--accent-blue)' : '#1e293b' }}
+              >
+                Compacto
+              </button>
+              <button 
+                type="button" 
+                className={`btn btn-sm ${spacingMode === 'normal' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setSpacingMode('normal')} 
+                style={{ fontSize: '11.5px', padding: '2px 8px', color: '#fff', background: spacingMode === 'normal' ? 'var(--accent-blue)' : '#1e293b' }}
+              >
+                Normal
+              </button>
+              <button 
+                type="button" 
+                className={`btn btn-sm ${spacingMode === 'spacious' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setSpacingMode('spacious')} 
+                style={{ fontSize: '11.5px', padding: '2px 8px', color: '#fff', background: spacingMode === 'spacious' ? 'var(--accent-blue)' : '#1e293b' }}
+              >
+                Confortável
+              </button>
+            </div>
+          </div>
+
           {/* Seletor de Quantidade de Folhas */}
           <div className="copies-selector" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#334155', padding: '4px 12px', borderRadius: '10px', border: '1px solid #475569' }}>
             <span style={{ fontSize: '12.5px', color: '#cbd5e1', fontWeight: 600 }}>Quantidade de Folhas:</span>
@@ -520,7 +560,7 @@ function PrintPreview({ events, month, year, onClose }) {
 
       <div className="print-pages-container">
         {pageCopies.map((_, index) => (
-          <div key={index} className="print-page">
+          <div key={index} className={`print-page spacing-${spacingMode}`}>
             <Col />
             <Col />
             <Col />
